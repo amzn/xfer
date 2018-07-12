@@ -1,0 +1,10 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - pip install requirements.txt
+      - pip install -r test_requirements.txt
+  build:
+    commands:
+      - nosetests
