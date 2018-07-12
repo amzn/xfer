@@ -8,8 +8,3 @@ phases:
   build:
     commands:
       - nosetests
-      
-
-artifacts:
-  files:
-    - xfer-test/
