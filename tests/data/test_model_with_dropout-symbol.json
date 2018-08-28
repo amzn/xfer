@@ -1,0 +1,83 @@
+{
+  "nodes": [
+    {
+      "op": "null", 
+      "name": "data", 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "fc1_weight", 
+      "attrs": {"num_hidden": "64"}, 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "fc1_bias", 
+      "attrs": {"num_hidden": "64"}, 
+      "inputs": []
+    }, 
+    {
+      "op": "FullyConnected", 
+      "name": "fc1", 
+      "attrs": {"num_hidden": "64"}, 
+      "inputs": [[0, 0, 0], [1, 0, 0], [2, 0, 0]]
+    }, 
+    {
+      "op": "Activation", 
+      "name": "actv1", 
+      "attrs": {"act_type": "relu"}, 
+      "inputs": [[3, 0, 0]]
+    }, 
+    {
+      "op": "Dropout", 
+      "name": "dropout1", 
+      "inputs": [[4, 0, 0]]
+    }, 
+    {
+      "op": "null", 
+      "name": "fc2_weight", 
+      "attrs": {"num_hidden": "4"}, 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "fc2_bias", 
+      "attrs": {"num_hidden": "4"}, 
+      "inputs": []
+    }, 
+    {
+      "op": "FullyConnected", 
+      "name": "fc2", 
+      "attrs": {"num_hidden": "4"}, 
+      "inputs": [[5, 0, 0], [6, 0, 0], [7, 0, 0]]
+    }, 
+    {
+      "op": "null", 
+      "name": "softmax_label", 
+      "inputs": []
+    }, 
+    {
+      "op": "SoftmaxOutput", 
+      "name": "softmax", 
+      "inputs": [[8, 0, 0], [9, 0, 0]]
+    }
+  ], 
+  "arg_nodes": [0, 1, 2, 6, 7, 9], 
+  "node_row_ptr": [
+    0, 
+    1, 
+    2, 
+    3, 
+    4, 
+    5, 
+    7, 
+    8, 
+    9, 
+    10, 
+    11, 
+    12
+  ], 
+  "heads": [[10, 0, 0]], 
+  "attrs": {"mxnet_version": ["int", 10100]}
+}

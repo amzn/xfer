@@ -1,0 +1,9 @@
+@import url("css/theme.css");
+
+.longtable span {
+  font-size: 125%
+}
+
+.wy-nav-content {
+    max-width: unset;
+}

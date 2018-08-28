@@ -1,0 +1,13 @@
+src/operator/nn/../tensor/../elemwise_op_common.h:123: Check failed: assign(&dattr, (*vec)[i]) Incompatible attr in node  at 0-th output: expected [4,46225], got [4,45369]
+
+Stack trace returned 10 entries:
+[bt] (0) 0   libmxnet.so                         0x0000000112338598 _ZN4dmlc15LogMessageFatalD2Ev + 40
+[bt] (1) 1   libmxnet.so                         0x0000000112336299 _ZN4dmlc15LogMessageFatalD1Ev + 9
+[bt] (2) 2   libmxnet.so                         0x00000001123f7c25 _ZZN5mxnet2op12ElemwiseAttrIN4nnvm6TShapeEXadL_ZNS0_13shape_is_noneERKS3_EEXadL_ZNS0_12shape_assignEPS3_S5_EELb1EXadL_ZNS0_12shape_stringES5_EELin1ELin1EEEbRKNS2_9NodeAttrsEPNSt3__16vectorIT_NSA_9allocatorISC_EEEESG_RKSC_ENKUlPNSB_IS3_NSD_IS3_EEEEmPKcE_clESL_mSN_ + 549
+[bt] (3) 3   libmxnet.so                         0x00000001123f78e1 _ZN5mxnet2op12ElemwiseAttrIN4nnvm6TShapeEXadL_ZNS0_13shape_is_noneERKS3_EEXadL_ZNS0_12shape_assignEPS3_S5_EELb1EXadL_ZNS0_12shape_stringES5_EELin1ELin1EEEbRKNS2_9NodeAttrsEPNSt3__16vectorIT_NSA_9allocatorISC_EEEESG_RKSC_ + 257
+[bt] (4) 4   libmxnet.so                         0x00000001123f2d72 _ZN5mxnet2op13ElemwiseShapeILi1ELi1EEEbRKN4nnvm9NodeAttrsEPNSt3__16vectorINS2_6TShapeENS6_9allocatorIS8_EEEESC_ + 242
+[bt] (5) 5   libmxnet.so                         0x00000001132c40e7 _ZN5mxnet10imperative12SetShapeTypeERKNS_7ContextERKN4nnvm9NodeAttrsERKNSt3__16vectorIPNS_7NDArrayENS8_9allocatorISB_EEEESG_PNS_12DispatchModeE + 1495
+[bt] (6) 6   libmxnet.so                         0x00000001132c2ce9 _ZN5mxnet10Imperative6InvokeERKNS_7ContextERKN4nnvm9NodeAttrsERKNSt3__16vectorIPNS_7NDArrayENS8_9allocatorISB_EEEESG_ + 713
+[bt] (7) 7   libmxnet.so                         0x0000000113243a37 _Z22MXImperativeInvokeImplPviPS_PiPS0_iPPKcS5_ + 391
+[bt] (8) 8   libmxnet.so                         0x0000000113244c04 MXImperativeInvokeEx + 164
+[bt] (9) 9   libffi.6.dylib                      0x000000010e8c6884 ffi_call_unix64 + 76
