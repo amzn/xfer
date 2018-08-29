@@ -11,8 +11,8 @@ install:
   - pip install -r docs/requirements.txt
 script:
   # - flake8
-  # - nosetests --with-coverage tests/unit/
-  - nosetests --with-coverage tests/integration/
+  # - nosetests --with-coverage -v tests/unit/
+  - nosetests --with-coverage -v tests/integration/
 after_success:
   - codecov
 jobs:
