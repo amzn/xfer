@@ -7,7 +7,7 @@
 
 [Website](https://github.com/amzn/xfer) |
 [Documentation](https://github.com/amzn/xfer/docs) |
-[Contribution Guide](https://github.com/amzn/xfer/CONTRIBUTING.md)
+[Contribution Guide](CONTRIBUTING.md)
 
 #### What is Xfer?
 Xfer is a library that allows quick and easy transfer of knowledge<sup>[1](ftp://ftp.cs.wisc.edu/machine-learning/shavlik-group/torrey.handbook09.pdf),[2](http://cs231n.github.io/transfer-learning/),[3](https://papers.nips.cc/paper/5347-how-transferable-are-features-in-deep-neural-networks.pdf)</sup> stored in deep neural networks implemented in [MXNet](https://mxnet.incubator.apache.org/). Xfer can be used with data of arbitrary numeric format, and can be applied to the common cases of image or text data.
