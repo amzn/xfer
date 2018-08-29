@@ -1,4 +1,4 @@
-![Xfer](doc/image/logo_330x200.png)
+![Xfer](docs/image/logo_330x200.png)
 
 ## Deep Transfer Learning for MXNet
 

@@ -94,7 +94,7 @@ from the top level directory. This also does coverage checks.
 ### Generating docs
 Documentation contributions are much appreciated! If you see something incorrect or poorly explained, please fix it and send the update!
 
-If you'd like to generate the docs locally, first install the required Xfer dependencies from ```requirements.txt``` and the necessary documentation packages from the ```doc/requirements.txt``` file. Due a dependency on [nbconvert](https://nbconvert.readthedocs.io/en/latest/index.html), you will need to install Pandoc separately from [here](http://pandoc.org/installing.html). Then, from inside the doc directory, run:
+If you'd like to generate the docs locally, first install the required Xfer dependencies from ```requirements.txt``` and the necessary documentation packages from the ```docs/requirements.txt``` file. Due a dependency on [nbconvert](https://nbconvert.readthedocs.io/en/latest/index.html), you will need to install Pandoc separately from [here](http://pandoc.org/installing.html). Then, from inside the doc directory, run:
 
 ```
 make html
