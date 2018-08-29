@@ -19,7 +19,7 @@ before_install:
     # Confirm versions
     python --version
     pip -V
-fi
+  fi
 install:
   - pip install --upgrade pip
   - pip install -r requirements.txt
