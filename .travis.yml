@@ -10,8 +10,8 @@ install:
   - pip install -r test_requirements.txt
   - pip install -r docs/requirements.txt
 script:
-  - flake8
-  - nosetests --with-coverage tests/unit/
+  # - flake8
+  # - nosetests --with-coverage tests/unit/
   - nosetests --with-coverage tests/integration/
 after_success:
   - codecov

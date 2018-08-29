@@ -17,6 +17,7 @@ from abc import ABCMeta, abstractmethod
 import mxnet as mx
 import random
 import numpy as np
+import gc
 
 import xfer
 from ..repurposer_test_utils import RepurposerTestUtils
@@ -90,6 +91,7 @@ class WorkflowTestCase(TestCase):
             results = rep.predict_label(self.test_iter)
             accuracy = np.mean(results == self.test_labels)
             self.assert_accuracy(accuracy)
+            gc.collect()
 
     def test_load_pre_saved_repurposer(self):
         """ Test case to check for backward compatibility of deserialization """
