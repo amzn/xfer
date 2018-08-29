@@ -3,7 +3,7 @@ os: linux
 python:
   - '3.4'
   - '3.5'
-before_install:
+before_install: |
   if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     brew update
     # Recommended for pyenv
@@ -19,7 +19,7 @@ before_install:
     # Confirm versions
     python --version
     pip -V
-fi
+  fi
 install:
   - pip install --upgrade pip
   - pip install -r requirements.txt
