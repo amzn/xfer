@@ -19,6 +19,8 @@ before_install: |
     # Confirm versions
     python --version
     pip -V
+    # Remove this line after GPy 1.9.3
+    pip install GPy
   fi
 install:
   - pip install --upgrade pip
