@@ -88,6 +88,13 @@ class RepurposerTestUtils:
          mx.test_utils.download(path+'vgg/vgg19-symbol.json')]
 
     @staticmethod
+    def download_squeezenet():
+        # Download squeezenet (trained on imagenet)
+        path = 'http://data.mxnet.io/models/imagenet/'
+        [mx.test_utils.download(path+'squeezenet/squeezenet_v1.1-0000.params'),
+         mx.test_utils.download(path+'squeezenet/squeezenet_v1.1-symbol.json')]
+
+    @staticmethod
     def unzip_mnist_sample():
         zip_ref = zipfile.ZipFile('tests/data/mnist_sample.zip', 'r')
         zip_ref.extractall('.')
