@@ -93,20 +93,19 @@ class WorkflowTestCase(TestCase):
             accuracy = np.mean(results == self.test_labels)
             self.assert_accuracy(accuracy)
 
-    # def test_load_pre_saved_repurposer(self):
-    #     """ Test case to check for backward compatibility of deserialization """
-    #     if self.__class__ in [WorkflowTestCase, NnftWorkflowTestCase, NnrfWorkflowTestCase]:
-    #         # Skipping base class and
-    #         # NN repurposer (because nn deserialization is done by mxnet and pre-saved nn models are large)
-    #         return
-    #     # Load pre-saved repurposer from file
-    #     repurposer_file_prefix = self.pre_saved_prefix + self.__class__.__name__
-    #     source_model = mx.module.Module.load('vgg19', 0, label_names=[self.label_name], data_names=('data',))
-    #     repurposer = xfer.load(repurposer_file_prefix, source_model=source_model)
-    #     # Validate accuracy of predictions
-    #     predicted_labels = repurposer.predict_label(self.test_iter)
-    #     accuracy = np.mean(predicted_labels == self.test_labels)
-    #     self.assert_accuracy(accuracy)
+    def test_load_pre_saved_repurposer(self):
+        """ Test case to check for backward compatibility of deserialization """
+        if self.__class__ == WorkflowTestCase:  # base class
+            return
+        if self.__class__ == GpWorkflowTestCase:  # Remove after release of GPy 1.9.3
+            return
+        # Load pre-saved repurposer from file
+        repurposer_file_prefix = self.pre_saved_prefix + self.__class__.__name__
+        repurposer = xfer.load(repurposer_file_prefix, source_model=self.source_model)
+        # Validate accuracy of predictions
+        predicted_labels = repurposer.predict_label(self.test_iter)
+        accuracy = np.mean(predicted_labels == self.test_labels)
+        self.assert_accuracy(accuracy)
 
     def assert_accuracy(self, accuracy):
         self.assertTrue(accuracy == self.expected_accuracy,
