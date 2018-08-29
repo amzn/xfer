@@ -93,7 +93,7 @@ class NeuralNetworkRepurposerTestCase(TestCase):
 
         expected_accuracy = 0.96985
         accuracy = np.mean(labels == RepurposerTestUtils.get_labels(test_iterator))
-        self.assertTrue(np.isclose(accuracy, expected_accuracy),
+        self.assertTrue(np.isclose(accuracy, expected_accuracy, rtol=1e-3),
                         "Prediction accuracy is incorrect. Expected:{}. Got:{}".format(expected_accuracy, accuracy))
 
     @patch.object(NeuralNetworkRepurposer, RepurposerTestUtils.VALIDATE_REPURPOSE_METHOD_NAME)
