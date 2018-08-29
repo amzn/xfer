@@ -20,7 +20,7 @@ before_install: |
     python --version
     pip -V
     # Remove this line after GPy 1.9.3
-    pip install GPy
+    pip install numpy
   fi
 install:
   - pip install --upgrade pip
