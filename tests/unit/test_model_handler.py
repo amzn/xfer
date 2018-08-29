@@ -331,7 +331,8 @@ class TestModelHandler(TestCase):
         assert list(features.keys()) == ['fullyconnected0', 'flatten1']
         tolerance = 5e-2
 
-        assert (labels == [0, 0, 1, 1, 2, 2]).all()
+        expected_labels = [0, 0, 1, 1, 2, 2]
+        assert (labels == expected_labels).all(), 'Expected {}, got {}'.format(expected_labels, labels)
         assert sorted(features.keys()) == sorted([layer1, layer2])
 
         expected_features = {}
