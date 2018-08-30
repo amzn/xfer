@@ -20,7 +20,7 @@ import os
 from unittest.mock import MagicMock
 
 
-sys.path.insert(0, os.path.abspath('../../'))
+sys.path.insert(0, os.path.abspath('../'))
 
 print('sys.path:')
 print(sys.path)
@@ -31,7 +31,7 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
         return MagicMock()
 
-MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'GPy', 'mxnet', 'scipy.sparse', 'murmurhash3_32']
+MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'GPy', 'mxnet', 'sklearn]
 
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
