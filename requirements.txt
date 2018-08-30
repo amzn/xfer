@@ -1,4 +1,6 @@
 mxnet==1.2.0
+#remove numpy requirement after GPy 1.9.3
+numpy==1.15.1
 scikit-learn==0.19.2
 matplotlib==2.2.2
 GPy==1.9.2
