@@ -43,6 +43,7 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/amzn/xfer',
     packages=find_packages(exclude=['test*']),
+    package_dir={'': 'xfer/'},
     include_package_data=True,
     install_requires=requires,
     python_requires='>=3',  # requires setuptools>=24.2.0 for packaging and pip>=9.0.0 on download for this to work
