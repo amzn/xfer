@@ -14,7 +14,7 @@
 Repurposing
 ************
 
-.. currentmodule:: model_handler
+.. currentmodule:: xfer
 
 Base Classes:
 
@@ -37,7 +37,7 @@ Repurposers:
     
     .. Add/replace module names you want documented here
     LrRepurposer
-    xfer.SvmRepurposer
+    SvmRepurposer
     xfer.GpRepurposer
     xfer.BnnRepurposer
     xfer.NeuralNetworkFineTuneRepurposer
