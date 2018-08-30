@@ -21,8 +21,8 @@ from .meta_model_repurposer import MetaModelRepurposer  # noqa: F401
 from .neural_network_repurposer import NeuralNetworkRepurposer  # noqa: F401
 
 # import repurposers
-from . import svm_repurposer  # noqa: F401
-from . import lr_repurposer  # noqa: F401
+from .svm_repurposer import SvmRepurposer  # noqa: F401
+from .lr_repurposer import LrRepurposer  # noqa: F401
 from .bnn_repurposer import BnnRepurposer  # noqa: F401
 from .gp_repurposer import GpRepurposer  # noqa: F401
 from .neural_network_fine_tune_repurposer import NeuralNetworkFineTuneRepurposer  # noqa: F401
