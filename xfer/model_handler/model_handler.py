@@ -213,7 +213,7 @@ class ModelHandler(object):
         data_shape = data_iterator.provide_data[0][1]
         batch_no = 0
         id2layer = dict(enumerate(layer_names))
-        data_iterator.reset()
+        # data_iterator.reset()
 
         intermediate_layer_symbols = [self.symbol.get_internals()[l + '_output'] for l in layer_names]
         intermediate_symbol = mx.sym.Group(intermediate_layer_symbols)
