@@ -1,6 +1,6 @@
 mxnet==1.2.0
-#remove numpy requirement after GPy 1.9.3
-numpy==1.15.1
 scikit-learn==0.19.2
 matplotlib==2.2.2
-GPy==1.9.2
+# Replace with GPy 1.9.3 upon release
+-e git+git://github.com/SheffieldML/GPy.git@devel
+
