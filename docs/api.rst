@@ -14,8 +14,6 @@
 Repurposing
 ************
 
-.. currentmodule:: xfer
-
 Base Classes:
 
 .. autosummary::
@@ -38,7 +36,7 @@ Repurposers:
     .. Add/replace module names you want documented here
     LrRepurposer
     SvmRepurposer
-    xfer.GpRepurposer
+    gp_repurposer.GpRepurposer
     xfer.BnnRepurposer
     xfer.NeuralNetworkFineTuneRepurposer
     xfer.NeuralNetworkRandomFreezeRepurposer
