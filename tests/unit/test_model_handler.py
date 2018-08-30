@@ -360,8 +360,6 @@ class TestModelHandler(TestCase):
         assert list(features.keys()) == ['fullyconnected0', 'flatten1']
         tolerance = 1e-4
 
-        expected_labels = [0, 0, 1, 1, 2, 2]
-        assert (labels == expected_labels).all(), 'Expected {}, got {}'.format(expected_labels, labels)
         assert sorted(features.keys()) == sorted([layer1, layer2])
 
         expected_features = {}
@@ -371,7 +369,35 @@ class TestModelHandler(TestCase):
                                               [-15005.03808594, -15088.01660156, 5304.77539062, 6113.68164062],
                                               [-12687.98339844, -14598.75097656, 1158.26794434, 4819.8671875],
                                               [-11366.10351562, -16437.70507812, -4690.74951172, 8055.31982422]])
-        assert np.allclose(features[layer1], expected_features[layer1], rtol=tolerance)
+        expected_labels = [0, 0, 1, 1, 2, 2]
+        num_test_instances = len(expected_labels)
+
+        expected_feature_label_dict = {}
+        for index, expected_label in enumerate(expected_labels):
+            key = hash(str(expected_features[layer1][index].astype(int)))
+            expected_feature_label_dict[key] = (expected_features[layer1][index], expected_label)
+        assert len(expected_feature_label_dict) == num_test_instances
+
+        actual_feature_label_dict = {}
+        for index, actual_label in enumerate(labels):
+            key = hash(str(features[layer1][index].astype(int)))
+            actual_feature_label_dict[key] = (features[layer1][index], actual_label)
+        assert len(actual_feature_label_dict) == num_test_instances
+
+        # Compare if <feature, label> pairs are returned as expected
+        for key in expected_feature_label_dict:
+            self.assertTrue(key in actual_feature_label_dict, "Expected features not found")
+
+            expected_features = expected_feature_label_dict[key][0]
+            actual_features = actual_feature_label_dict[key][0]
+            self.assertTrue(np.allclose(expected_features, actual_features,  rtol=tolerance),
+                            "Expected features:{}. Actual:{}".format(expected_features, actual_features))
+
+            expected_label = expected_feature_label_dict[key][1]
+            actual_label = actual_feature_label_dict[key][1]
+            self.assertTrue(expected_label == actual_label,
+                            "Expected label:{}. Actual:{}".format(expected_label, actual_label))
+
         assert features[layer2].shape == (6, 46225)
 
     def test_get_layer_output_image_iterator(self):
