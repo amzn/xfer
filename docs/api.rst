@@ -21,9 +21,9 @@ Base Classes:
     :nosignatures:
 
     .. Add/replace module names you want documented here
-    Repurposer
-    MetaModelRepurposer
-    NeuralNetworkRepurposer
+    xfer.Repurposer
+    xfer.MetaModelRepurposer
+    xfer.NeuralNetworkRepurposer
     
 
 Repurposers:
@@ -34,12 +34,12 @@ Repurposers:
 
     
     .. Add/replace module names you want documented here
-    LrRepurposer
-    SvmRepurposer
-    GpRepurposer
-    BnnRepurposer
-    NeuralNetworkFineTuneRepurposer
-    NeuralNetworkRandomFreezeRepurposer
+    xfer.LrRepurposer
+    xfer.SvmRepurposer
+    xfer.GpRepurposer
+    xfer.BnnRepurposer
+    xfer.NeuralNetworkFineTuneRepurposer
+    xfer.NeuralNetworkRandomFreezeRepurposer
     
 Model Handler
 ***************
