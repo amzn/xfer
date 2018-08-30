@@ -14,6 +14,8 @@
 Repurposing
 ************
 
+.. currentmodule:: model_handler
+
 Base Classes:
 
 .. autosummary::
@@ -21,8 +23,8 @@ Base Classes:
     :nosignatures:
 
     .. Add/replace module names you want documented here
-    xfer.Repurposer
-    xfer.MetaModelRepurposer
+    xfer.repurposer.Repurposer
+    meta_model_repurposer.MetaModelRepurposer
     xfer.NeuralNetworkRepurposer
     
 
@@ -34,7 +36,7 @@ Repurposers:
 
     
     .. Add/replace module names you want documented here
-    xfer.LrRepurposer
+    LrRepurposer
     xfer.SvmRepurposer
     xfer.GpRepurposer
     xfer.BnnRepurposer
