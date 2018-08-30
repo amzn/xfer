@@ -22,6 +22,8 @@ from unittest.mock import MagicMock
 
 sys.path.insert(0, os.path.abspath('../../'))
 
+print('sys.path:')
+print(sys.path)
 
 
 class Mock(MagicMock):
