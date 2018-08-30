@@ -7,7 +7,7 @@
 
 
 [Website](https://github.com/amzn/xfer) |
-[Documentation](https://github.com/amzn/xfer/docs) |
+[Documentation](https://xfer.readthedocs.io/) |
 [Contribution Guide](CONTRIBUTING.md)
 
 #### What is Xfer?
@@ -35,12 +35,12 @@ predictions = repurposer.predict_label(test_iterator)
 ```
 
 ## Getting Started
-* [Documentation](TODO)
-* [Tutorial: Introduction and transfer learning for image data](TODO)
-* [Tutorial: Transfer learning with automatic hyperparameter tuning](TODO)
-* [Tutorial: Transfer learning for text data](TODO)
-* [Tutorial: Creating your own custom repurposer](TODO)
-* [Tutorial: xfer.ModelHandler for easy manipulation and inspection of MXNet models](TODO)
+* [Documentation](https://xfer.readthedocs.io/)
+* [Tutorial: Introduction and transfer learning for image data](https://xfer.readthedocs.io/en/master/demos/xfer-overview.html)
+* [Tutorial: Transfer learning with automatic hyperparameter tuning](https://xfer.readthedocs.io/en/master/demos/xfer-hpo.html)
+* [Tutorial: Transfer learning for text data](https://xfer.readthedocs.io/en/master/demos/xfer-text-transfer.html)
+* [Tutorial: Creating your own custom repurposer](https://xfer.readthedocs.io/en/master/demos/xfer-custom-repurosers.html)
+* [Tutorial: xfer.ModelHandler for easy manipulation and inspection of MXNet models](https://xfer.readthedocs.io/en/master/demos/xfer-modelhandler.html)
 
 ## Installation
 * __Dependencies:__
