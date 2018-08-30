@@ -35,7 +35,7 @@ Repurposers:
     
     .. Add/replace module names you want documented here
     LrRepurposer
-    svm_repurposer
+    xfer.svm_repurposer
     gp_repurposer.GpRepurposer
     xfer.BnnRepurposer
     xfer.NeuralNetworkFineTuneRepurposer
@@ -54,3 +54,7 @@ Model Handler
     model_handler.exceptions
     model_handler.consts
 
+
+.. automodule:: xfer.lr_repurposer
+    :members:
+    :show-inheritance:
