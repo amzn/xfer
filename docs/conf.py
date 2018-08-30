@@ -21,6 +21,7 @@ from unittest.mock import MagicMock
 
 
 sys.path.insert(0, os.path.abspath('../xfer'))
+sys.path.insert(0, os.path.abspath('../'))
 
 
 
