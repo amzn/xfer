@@ -3,11 +3,12 @@
 ## Deep Transfer Learning for MXNet
 
 --------------------------------------------------------------------------------
+[![Build Status](https://travis-ci.org/amzn/xfer.svg?branch=master)](https://travis-ci.org/amzn/xfer) [![Documentation Status](https://readthedocs.org/projects/xfer/badge/?version=latest)](https://xfer.readthedocs.io/en/latest/?badge=latest) [![codecov](https://codecov.io/gh/amzn/xfer/branch/master/graph/badge.svg)](https://codecov.io/gh/amzn/xfer) [![pypi](https://img.shields.io/pypi/v/xfer-ml.svg?style=flat)](https://pypi.org/project/xfer-ml/) [![GitHub license](https://img.shields.io/github/license/amzn/xfer.svg)](https://github.com/amzn/xfer/blob/master/LICENSE)
 
 
 [Website](https://github.com/amzn/xfer) |
 [Documentation](https://github.com/amzn/xfer/docs) |
-[Contribution Guide](https://github.com/amzn/xfer/CONTRIBUTING.md)
+[Contribution Guide](CONTRIBUTING.md)
 
 #### What is Xfer?
 Xfer is a library that allows quick and easy transfer of knowledge<sup>[1](ftp://ftp.cs.wisc.edu/machine-learning/shavlik-group/torrey.handbook09.pdf),[2](http://cs231n.github.io/transfer-learning/),[3](https://papers.nips.cc/paper/5347-how-transferable-are-features-in-deep-neural-networks.pdf)</sup> stored in deep neural networks implemented in [MXNet](https://mxnet.incubator.apache.org/). Xfer can be used with data of arbitrary numeric format, and can be applied to the common cases of image or text data.

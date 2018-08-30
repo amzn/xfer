@@ -32,15 +32,17 @@ class WorkflowTestCase(TestCase):
 
         self.label_name = 'prob_label'
         self.save_name = self.__class__.__name__
-        self.meta_model_feature_layer_name = ['fc8']
+        self.meta_model_feature_layer_name = ['flatten']
         self.pre_saved_prefix = 'tests/data/pre_saved_repurposers/pre_saved_'
         self.expected_accuracy = None  # Overridden in derived classes
 
         RepurposerTestUtils.download_vgg19()
+        RepurposerTestUtils.download_squeezenet()
         RepurposerTestUtils.unzip_mnist_sample()
 
         # Load source model
-        self.source_model = mx.module.Module.load('vgg19', 0, label_names=[self.label_name], data_names=('data',))
+        self.source_model = mx.module.Module.load('squeezenet_v1.1', 0, label_names=[self.label_name],
+                                                  data_names=('data',))
         # Create train and test data iterators
         self.train_iter = RepurposerTestUtils.create_img_iter('mnist_sample/train', 20, self.label_name)
         self.test_iter = RepurposerTestUtils.create_img_iter('mnist_sample/test', 20, self.label_name)
@@ -93,9 +95,9 @@ class WorkflowTestCase(TestCase):
 
     def test_load_pre_saved_repurposer(self):
         """ Test case to check for backward compatibility of deserialization """
-        if self.__class__ in [WorkflowTestCase, NnftWorkflowTestCase, NnrfWorkflowTestCase]:
-            # Skipping base class and
-            # NN repurposer (because nn deserialization is done by mxnet and pre-saved nn models are large)
+        if self.__class__ == WorkflowTestCase:  # base class
+            return
+        if self.__class__ == GpWorkflowTestCase:  # Remove after release of GPy 1.9.3
             return
         # Load pre-saved repurposer from file
         repurposer_file_prefix = self.pre_saved_prefix + self.__class__.__name__
@@ -113,7 +115,7 @@ class WorkflowTestCase(TestCase):
 class LrWorkflowTestCase(WorkflowTestCase):
     def setUp(self):
         super().setUp()
-        self.expected_accuracy = 0.94
+        self.expected_accuracy = 0.95
 
     def get_repurposer(self, source_model):
         return xfer.LrRepurposer(source_model, self.meta_model_feature_layer_name)
@@ -131,7 +133,7 @@ class SvmWorkflowTestCase(WorkflowTestCase):
 class GpWorkflowTestCase(WorkflowTestCase):
     def setUp(self):
         super().setUp()
-        self.expected_accuracy = 0.94
+        self.expected_accuracy = 0.92
 
     def get_repurposer(self, source_model):
         return xfer.GpRepurposer(source_model, self.meta_model_feature_layer_name, apply_l2_norm=True)
@@ -140,7 +142,7 @@ class GpWorkflowTestCase(WorkflowTestCase):
 class BnnWorkflowTestCase(WorkflowTestCase):
     def setUp(self):
         super().setUp()
-        self.min_expected_accuracy = 0.90
+        self.min_expected_accuracy = 0.70
 
     def get_repurposer(self, source_model):
         return xfer.BnnRepurposer(source_model, self.meta_model_feature_layer_name)
@@ -153,11 +155,12 @@ class BnnWorkflowTestCase(WorkflowTestCase):
 class NnftWorkflowTestCase(WorkflowTestCase):
     def setUp(self):
         super().setUp()
-        self.min_accuracy = 0.80
+        self.min_accuracy = 0.75
         self.prev_accuracy = None
 
     def get_repurposer(self, source_model):
-        return xfer.NeuralNetworkFineTuneRepurposer(source_model, transfer_layer_name='fc8', target_class_count=5)
+        return xfer.NeuralNetworkFineTuneRepurposer(source_model, transfer_layer_name='flatten', target_class_count=5,
+                                                    num_epochs=10)
 
     def assert_accuracy(self, accuracy):
         assert accuracy > self.min_accuracy, 'accuracy: {}, min expected: {}'.format(accuracy, self.min_accuracy)
@@ -170,15 +173,16 @@ class NnftWorkflowTestCase(WorkflowTestCase):
 class NnrfWorkflowTestCase(WorkflowTestCase):
     def setUp(self):
         super().setUp()
-        self.min_accuracy = 0.80
+        self.min_accuracy = 0.7
         self.prev_accuracy = None
 
     def get_repurposer(self, source_model):
-        fixed_layers = ['conv1_1', 'conv1_2', 'conv2_1', 'conv2_2', 'conv3_1', 'conv3_2', 'conv3_3', 'conv3_4',
-                        'conv4_1', 'conv4_2', 'conv4_3', 'conv4_4', 'conv5_1', 'conv5_2', 'conv5_3']
-        random_layers = ['fc6', 'fc7']
+        fixed_layers = ['conv1', 'fire2_squeeze1x1', 'fire2_expand1x1', 'fire2_expand3x3', 'fire3_squeeze1x1',
+                        'fire3_expand1x1', 'fire3_expand3x3', 'fire4_squeeze1x1', 'fire4_expand1x1', 'fire4_expand3x3',
+                        'fire5_squeeze1x1', 'fire5_expand1x1', 'fire5_expand3x3']
+        random_layers = ['conv10']
         return xfer.NeuralNetworkRandomFreezeRepurposer(source_model, target_class_count=5, fixed_layers=fixed_layers,
-                                                        random_layers=random_layers)
+                                                        random_layers=random_layers, num_epochs=10)
 
     def assert_accuracy(self, accuracy):
         assert accuracy > self.min_accuracy, 'accuracy: {}, min expected: {}'.format(accuracy, self.min_accuracy)
