@@ -17,10 +17,21 @@ from datetime import datetime
 # import pkg_resources
 import sys
 import os
+from unittest.mock import MagicMock
 
 
 sys.path.insert(0, os.path.abspath('../xfer'))
-sys.path.insert(0, os.path.abspath('../'))
+
+
+
+class Mock(MagicMock):
+    @classmethod
+    def __getattr__(cls, name):
+        return MagicMock()
+
+MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'GPy', 'mxnet']
+
+sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
 exec(open("../xfer/__version__.py").read())
