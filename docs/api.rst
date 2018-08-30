@@ -35,7 +35,7 @@ Repurposers:
     
     .. Add/replace module names you want documented here
     LrRepurposer
-    SvmRepurposer
+    svm_repurposer
     gp_repurposer.GpRepurposer
     xfer.BnnRepurposer
     xfer.NeuralNetworkFineTuneRepurposer
