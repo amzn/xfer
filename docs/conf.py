@@ -17,7 +17,7 @@ from datetime import datetime
 # import pkg_resources
 import sys
 import os
-from mock import Mock as MagicMock
+from unittest.mock import MagicMock
 
 
 sys.path.insert(0, os.path.abspath('../xfer'))
