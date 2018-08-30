@@ -20,7 +20,7 @@ from .repurposer import Repurposer  # noqa: F401
 from .meta_model_repurposer import MetaModelRepurposer  # noqa: F401
 from .neural_network_repurposer import NeuralNetworkRepurposer  # noqa: F401
 
-# import repurposers]
+# import repurposers
 from .svm_repurposer import SvmRepurposer  # noqa: F401
 from .lr_repurposer import LrRepurposer  # noqa: F401
 from .bnn_repurposer import BnnRepurposer  # noqa: F401
