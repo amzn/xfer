@@ -20,11 +20,6 @@ import os
 from unittest.mock import MagicMock
 
 
-sys.path.insert(0, os.path.abspath('../xfer'))
-sys.path.insert(0, os.path.abspath('../'))
-
-
-
 class Mock(MagicMock):
     @classmethod
     def __getattr__(cls, name):
