@@ -53,12 +53,3 @@ Model Handler
     xfer.model_handler.layer_factory
     xfer.model_handler.exceptions
     xfer.model_handler.consts
-
-
-.. automodule:: xfer.lr_repurposer
-    :members:
-    :show-inheritance:
-    
-.. autoclass:: xfer.NeuralNetworkFineTuneRepurposer
-    :members:
-    :show-inheritance:
