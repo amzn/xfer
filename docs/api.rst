@@ -49,7 +49,7 @@ Model Handler
     :nosignatures:
 
     .. Add/replace module names you want documented here
-    model_handler.ModelHandler
+    xfer.model_handler.ModelHandler
     model_handler.layer_factory
     model_handler.exceptions
     model_handler.consts
