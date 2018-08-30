@@ -32,7 +32,7 @@ class Mock(MagicMock):
         return MagicMock()
 
 MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'GPy', 'mxnet', 'sklearn', 'sklearn.svm', 'sklearn.linear_model',
-                'mxnet.ndarray']
+                'mxnet.ndarray', 'sklearn.preprocessing']
 
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
