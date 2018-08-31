@@ -209,19 +209,19 @@ class GpRepurposer(MetaModelRepurposer):
         params_dict[keys.APPLY_L2_NORM] = self.apply_l2_norm
         return params_dict
 
-    def get_attributes(self):
+    def _get_attributes(self):
         """
         Get parameters of repurposer not in constructor's argument list.
 
         :rtype: dict
         """
-        attributes_dict = super().get_attributes()
+        attributes_dict = super()._get_attributes()
         attributes_dict[keys.OPTIMIZER] = self.optimizer
         attributes_dict[keys.NUM_INDUCING_SPARSE_GP] = self.NUM_INDUCING_SPARSE_GP
         attributes_dict[keys.FEATURE_MEAN] = self.feature_mean.tolist()
         return attributes_dict
 
-    def set_attributes(self, input_dict):
+    def _set_attributes(self, input_dict):
         """
         Set attributes of class from input_dict.
         These attributes are the same as those returned by get_attributes method.
@@ -229,7 +229,7 @@ class GpRepurposer(MetaModelRepurposer):
         :param input_dict: Dictionary containing attribute values.
         :return: None
         """
-        super().set_attributes(input_dict)
+        super()._set_attributes(input_dict)
         self.optimizer = input_dict[keys.OPTIMIZER]
         self.NUM_INDUCING_SPARSE_GP = input_dict[keys.NUM_INDUCING_SPARSE_GP]
         self.feature_mean = np.array(input_dict[keys.FEATURE_MEAN])
@@ -246,7 +246,7 @@ class GpRepurposer(MetaModelRepurposer):
         output_dict = {repurposer_keys.PARAMS: self.get_params()}
 
         # Get rest of the attributes to save with the repurposer.
-        output_dict.update(self.get_attributes())
+        output_dict.update(self._get_attributes())
 
         # Serialize the GP models and save to output dictionary
         output_dict[repurposer_keys.TARGET_MODEL] = self._serialize_target_gp_models(save_data=True)
@@ -262,7 +262,7 @@ class GpRepurposer(MetaModelRepurposer):
         :return: None
         """
         # Set attributes of the repurposer from input_dict
-        self.set_attributes(input_dict)
+        self._set_attributes(input_dict)
 
         # Deserialize and set the target GP models
         self.target_model = self._deserialize_target_gp_models(input_dict[repurposer_keys.TARGET_MODEL])
