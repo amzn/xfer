@@ -3,7 +3,7 @@
 ## Deep Transfer Learning for MXNet
 
 --------------------------------------------------------------------------------
-[![Build Status](https://travis-ci.org/amzn/xfer.svg?branch=master)](https://travis-ci.org/amzn/xfer) [![Documentation Status](https://readthedocs.org/projects/xfer/badge/?version=latest)](https://xfer.readthedocs.io/en/latest/?badge=latest) [![codecov](https://codecov.io/gh/amzn/xfer/branch/master/graph/badge.svg)](https://codecov.io/gh/amzn/xfer) [![pypi](https://img.shields.io/pypi/v/xfer-ml.svg?style=flat)](https://pypi.org/project/xfer-ml/) [![GitHub license](https://img.shields.io/github/license/amzn/xfer.svg)](https://github.com/amzn/xfer/blob/master/LICENSE)
+[![Build Status](https://travis-ci.org/amzn/xfer.svg?branch=master)](https://travis-ci.org/amzn/xfer) [![Documentation Status](https://readthedocs.org/projects/xfer/badge/?version=master)](https://xfer.readthedocs.io/en/master/?badge=master) [![codecov](https://codecov.io/gh/amzn/xfer/branch/master/graph/badge.svg)](https://codecov.io/gh/amzn/xfer) [![pypi](https://img.shields.io/pypi/v/xfer-ml.svg?style=flat)](https://pypi.org/project/xfer-ml/) [![GitHub license](https://img.shields.io/github/license/amzn/xfer.svg)](https://github.com/amzn/xfer/blob/master/LICENSE)
 
 
 [Website](https://github.com/amzn/xfer) |

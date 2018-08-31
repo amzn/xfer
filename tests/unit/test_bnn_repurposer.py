@@ -37,7 +37,7 @@ class BnnRepurposerTestCase(MetaModelRepurposerTestCase):
         self.repurposer_class = BnnRepurposer
 
         # Minimum expected performance
-        self.minimum_expected_accuracy = 0.37
+        self.minimum_expected_accuracy = 0.22
 
     def test_train_model_from_features(self):
         bnn_repurposer = BnnRepurposer(self.source_model, self.source_model_layers, num_epochs=10)
@@ -57,7 +57,8 @@ class BnnRepurposerTestCase(MetaModelRepurposerTestCase):
     def _test_predict_from_features(self, test_predict_probability, expected_accuracy):
         """ Used to test 'predict_from_features' implementation in derived classes """
         # Create repurposer
-        repurposer = self.repurposer_class(self.source_model, self.source_model_layers)
+        repurposer = self.repurposer_class(self.source_model, self.source_model_layers, num_samples_mc_prediction=5,
+                                           num_epochs=5)
 
         repurposer.target_model = repurposer._train_model_from_features(self.train_features, self.train_labels)
 
@@ -88,7 +89,8 @@ class BnnRepurposerTestCase(MetaModelRepurposerTestCase):
         mock_model_handler.return_value = RepurposerTestUtils.get_mock_model_handler_object()
 
         # Create repurposer
-        repurposer = self.repurposer_class(self.source_model, self.source_model_layers)
+        repurposer = self.repurposer_class(self.source_model, self.source_model_layers, num_samples_mc_prediction=5,
+                                           num_epochs=5)
 
         # Identify which predict function to test
         if test_predict_probability:
@@ -135,7 +137,7 @@ class BnnRepurposerTestCase(MetaModelRepurposerTestCase):
         self._test_repurpose(n_jobs=1)  # Use single core
 
     def _test_repurpose(self, n_jobs=-1):
-        bnn_repurposer = BnnRepurposer(self.source_model, self.source_model_layers)
+        bnn_repurposer = BnnRepurposer(self.source_model, self.source_model_layers, num_epochs=5)
 
         # Target model is not initialized yet
         self.assertTrue(bnn_repurposer.target_model is None, "Target model not expected to be initialized at this \
@@ -243,6 +245,7 @@ class BnnRepurposerTestCase(MetaModelRepurposerTestCase):
             'num_epochs': 200,
             'start_annealing': 20,
             'end_annealing': 40,
+            'num_samples_mc_prediction': 100,
             'verbose': 0
         }
 
