@@ -37,7 +37,7 @@ class BnnRepurposerTestCase(MetaModelRepurposerTestCase):
         self.repurposer_class = BnnRepurposer
 
         # Minimum expected performance
-        self.minimum_expected_accuracy = 0.24
+        self.minimum_expected_accuracy = 0.22
 
     def test_train_model_from_features(self):
         bnn_repurposer = BnnRepurposer(self.source_model, self.source_model_layers, num_epochs=10)
