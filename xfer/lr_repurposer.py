@@ -117,7 +117,7 @@ class LrRepurposer(MetaModelRepurposer):
         output_dict = {}
         output_dict[repurposer_keys.PARAMS] = self.get_params()
         output_dict[repurposer_keys.TARGET_MODEL] = utils.sklearn_model_to_dict(self.target_model)
-        output_dict.update(self.get_attributes())
+        output_dict.update(self._get_attributes())
 
         utils.save_json(file_prefix, output_dict)
 
@@ -127,5 +127,5 @@ class LrRepurposer(MetaModelRepurposer):
 
         :param dict input_dict: Dictionary containing values for attributes to be set to.
         """
-        self.set_attributes(input_dict)  # Set attributes of the repurposer from input_dict
+        self._set_attributes(input_dict)  # Set attributes of the repurposer from input_dict
         self.target_model = utils.sklearn_model_from_dict(LogisticRegression, input_dict[repurposer_keys.TARGET_MODEL])

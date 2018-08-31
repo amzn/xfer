@@ -67,13 +67,13 @@ class NeuralNetworkRepurposer(Repurposer):
         param_dict[keys.NUM_EPOCHS] = self.num_epochs
         return param_dict
 
-    def get_attributes(self):
+    def _get_attributes(self):
         """
         Get parameters of repurposer not in constructor
 
         :rtype: dict
         """
-        attr_dict = super().get_attributes()
+        attr_dict = super()._get_attributes()
         if self.target_model is not None:
             attr_dict[serialization_keys.LAST_LAYER_NAME_TARGET] = ModelHandler(self.target_model).layer_names[-1]
         return attr_dict
@@ -180,7 +180,7 @@ class NeuralNetworkRepurposer(Repurposer):
         """
         output_dict = {}
         output_dict[repurposer_keys.PARAMS] = self.get_params()
-        output_dict.update(self.get_attributes())
+        output_dict.update(self._get_attributes())
 
         # save serialised model file_path.json
         utils.save_json(file_prefix, output_dict)
@@ -197,4 +197,4 @@ class NeuralNetworkRepurposer(Repurposer):
         self.target_model = mx.mod.Module.load(input_dict[serialization_keys.FILE_PATH], 0,
                                                label_names=[input_dict[serialization_keys.LAST_LAYER_NAME_TARGET] +
                                                             serialization_constants.LABEL_SUFFIX])
-        self.set_attributes(input_dict)  # Set attributes of repurposer from input_dict
+        self._set_attributes(input_dict)  # Set attributes of repurposer from input_dict
