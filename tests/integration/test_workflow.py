@@ -145,7 +145,7 @@ class BnnWorkflowTestCase(WorkflowTestCase):
 
     def get_repurposer(self, source_model):
         return xfer.BnnRepurposer(source_model, self.meta_model_feature_layer_name, num_samples_mc_prediction=10,
-                                  num_epochs=200)
+                                  num_epochs=200, num_samples_mc=3)
 
     def assert_accuracy(self, accuracy):
         self.assertTrue(accuracy > self.min_expected_accuracy,
