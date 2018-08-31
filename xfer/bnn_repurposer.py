@@ -134,19 +134,19 @@ class BnnRepurposer(MetaModelRepurposer):
         param_dict[keys.VERBOSE] = self.verbose
         return param_dict
 
-    def get_attributes(self):
+    def _get_attributes(self):
         """
         Get parameters of repurposer not in constructor.
 
         :rtype: dict
         """
-        attr_dict = super().get_attributes()
+        attr_dict = super()._get_attributes()
         attr_dict[keys.ANNEALING_WEIGHT] = self.annealing_weight
         attr_dict[keys.DIM_INPUT] = self.dim_input
         attr_dict[keys.NUM_CLASSES] = self.num_classes
         return attr_dict
 
-    def set_attributes(self, input_dict):
+    def _set_attributes(self, input_dict):
         """
         Set attributes of class from input_dict.
         These attributes are the same as those returned by get_attributes method.
@@ -154,7 +154,7 @@ class BnnRepurposer(MetaModelRepurposer):
         :param input_dict: Dictionary containing attribute values.
         :return: None
         """
-        super().set_attributes(input_dict)
+        super()._set_attributes(input_dict)
         self.annealing_weight = input_dict[keys.ANNEALING_WEIGHT]
         self.dim_input = input_dict[keys.DIM_INPUT]
         self.num_classes = input_dict[keys.NUM_CLASSES]
@@ -383,7 +383,7 @@ class BnnRepurposer(MetaModelRepurposer):
         """
         output_dict = {}
         output_dict[repurposer_keys.PARAMS] = self.get_params()
-        output_dict.update(self.get_attributes())
+        output_dict.update(self._get_attributes())
 
         utils.save_json(file_prefix, output_dict)
 
@@ -396,7 +396,7 @@ class BnnRepurposer(MetaModelRepurposer):
         :param dict input_dict: Dictionary containing values for attributes to be set to.
         """
         # Set attributes of the repurposer from input_dict
-        self.set_attributes(input_dict)
+        self._set_attributes(input_dict)
 
         # Deserialize the target bnn model
         var_posterior = GaussianVariationalPosterior.load(input_dict[serialization_keys.FILE_PATH] +
