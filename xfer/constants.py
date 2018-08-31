@@ -89,6 +89,7 @@ class bnn_repurposer_keys:
     NUM_EPOCHS = 'num_epochs'
     VERBOSE = 'verbose'
     BNN_CONTEXT_FUNCTION = 'bnn_context_function'
+    NUM_SAMPLES_MC_PREDICT = 'num_samples_mc_prediction'
 
 
 class bnn_constants:
