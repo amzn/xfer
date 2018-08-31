@@ -36,7 +36,6 @@ class WorkflowTestCase(TestCase):
         self.pre_saved_prefix = 'tests/data/pre_saved_repurposers/pre_saved_'
         self.expected_accuracy = None  # Overridden in derived classes
 
-        RepurposerTestUtils.download_vgg19()
         RepurposerTestUtils.download_squeezenet()
         RepurposerTestUtils.unzip_mnist_sample()
 
