@@ -262,6 +262,3 @@ class BnnRepurposerTestCase(MetaModelRepurposerTestCase):
         with self.assertRaises(AssertionError):
             with self.assertLogs():
                 bnn_repurposer._train_model_from_features(self.train_features, self.train_labels)
-
-    def get_repurposer(self, source_model, source_model_layers):
-        return BnnRepurposer(source_model, source_model_layers, num_epochs=5, num_samples_mc_prediction=5)

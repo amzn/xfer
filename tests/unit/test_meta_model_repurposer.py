@@ -180,7 +180,8 @@ class MetaModelRepurposerTestCase(TestCase):
                                              data_names=('data',))
         repurposer = self.repurposer_class(source_model, self.source_model_layers)
         if self.repurposer_class == BnnRepurposer:
-            repurposer = self.get_repurposer(source_model, self.source_model_layers)
+            repurposer = BnnRepurposer(source_model, self.source_model_layers, num_epochs=5,
+                                       num_samples_mc_prediction=5)
         repurposer.target_model = repurposer._train_model_from_features(self.train_features, self.train_labels)
         # Manually setting provide_data and provide_label because repurpose() is not called
         repurposer.provide_data = [('data', (2, 3, 224, 224))]
@@ -210,9 +211,10 @@ class MetaModelRepurposerTestCase(TestCase):
         accuracy2 = np.mean(results_loaded == self.test_labels)
 
         if self.repurposer_class == BnnRepurposer:
-            assert np.isclose(accuracy1, accuracy2, atol=0.1), 'Accuracies: {}, {}.'.format(accuracy1, accuracy2)
+            assert np.isclose(accuracy1, accuracy2, atol=0.1), 'Inconsistent accuracies: {}, {}.'.format(accuracy1,
+                                                                                                         accuracy2)
         else:
-            assert accuracy1 == accuracy2, 'Accuracies: {}, {}.'.format(accuracy1, accuracy2)
+            assert accuracy1 == accuracy2, 'Inconsistent accuracies: {}, {}.'.format(accuracy1, accuracy2)
 
         self._assert_attributes_equal(repurposer, loaded_repurposer)
 
