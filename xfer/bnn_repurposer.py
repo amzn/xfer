@@ -59,6 +59,7 @@ class BnnRepurposer(MetaModelRepurposer):
     :param int end_annealing: Determines the epoch at which the annealing process of the KL term ends.
     :param float step_annealing_sample_weight: Amount that the annealing weight is incremented in each epoch
        (from start_annealing to end_annealing).
+    :param int num_samples_mc_prediction: Number of Monte Carlo samples to use on prediction.
     :param bool verbose: Flag to control whether accuracy monitoring is logged during repurposing.
     :param float annealing_weight: Annealing weight in the current epoch.
     :param train_acc: Accuracy in training set in each epoch.
@@ -76,7 +77,7 @@ class BnnRepurposer(MetaModelRepurposer):
     def __init__(self, source_model: mx.mod.Module, feature_layer_names, context_function=mx.cpu, num_devices=1,
                  bnn_context_function=mx.cpu, sigma=100.0, num_layers=1, n_hidden=10, num_samples_mc=3,
                  learning_rate=1e-3, batch_size=20, num_epochs=200, start_annealing=None, end_annealing=None,
-                 verbose=0):
+                 num_samples_mc_prediction=100, verbose=0):
 
         # Call base class constructor with parameters required for meta-models
         super().__init__(source_model, feature_layer_names, context_function, num_devices)
@@ -89,6 +90,7 @@ class BnnRepurposer(MetaModelRepurposer):
         self.learning_rate = learning_rate
         self.batch_size = batch_size
         self.num_epochs = num_epochs
+        self.num_samples_mc_prediction = num_samples_mc_prediction
         self.verbose = verbose
 
         self.start_annealing = start_annealing
@@ -132,6 +134,7 @@ class BnnRepurposer(MetaModelRepurposer):
         param_dict[keys.START_ANNEALING] = self.start_annealing
         param_dict[keys.END_ANNEALING] = self.end_annealing
         param_dict[keys.VERBOSE] = self.verbose
+        param_dict[keys.NUM_SAMPLES_MC_PREDICT] = self.num_samples_mc_prediction
         return param_dict
 
     def get_attributes(self):
@@ -360,7 +363,7 @@ class BnnRepurposer(MetaModelRepurposer):
         :return: Predicted probabilities.
         :rtype: :class:`numpy.ndarray`
         """
-        return self.target_model.predict(features, num_samples_mc_prediction=100, context=self._context_bnn)[1]
+        return self.target_model.predict(features, self.num_samples_mc_prediction, context=self._context_bnn)[1]
 
     def _predict_label_from_features(self, features):
         """
@@ -372,7 +375,7 @@ class BnnRepurposer(MetaModelRepurposer):
         :return: Predicted labels.
         :rtype: :class:`numpy.ndarray`
         """
-        return self.target_model.predict(features, num_samples_mc_prediction=100, context=self._context_bnn)[0]
+        return self.target_model.predict(features, self.num_samples_mc_prediction, context=self._context_bnn)[0]
 
     def serialize(self, file_prefix):
         """
