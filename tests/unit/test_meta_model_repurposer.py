@@ -210,7 +210,7 @@ class MetaModelRepurposerTestCase(TestCase):
         accuracy2 = np.mean(results_loaded == self.test_labels)
 
         if self.repurposer_class == BnnRepurposer:
-            assert np.isclose(accuracy1, accuracy2, atol=0.05), 'Accuracies: {}, {}.'.format(accuracy1, accuracy2)
+            assert np.isclose(accuracy1, accuracy2, atol=0.1), 'Accuracies: {}, {}.'.format(accuracy1, accuracy2)
         else:
             assert accuracy1 == accuracy2, 'Accuracies: {}, {}.'.format(accuracy1, accuracy2)
 
