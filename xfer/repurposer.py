@@ -75,7 +75,7 @@ class Repurposer:
         param_dict[keys.NUM_DEVICES] = self.num_devices
         return param_dict
 
-    def get_attributes(self):
+    def _get_attributes(self):
         """
         Get parameters of repurposer not in constructor's argument list.
 
@@ -89,7 +89,7 @@ class Repurposer:
         attr_dict[serialization_keys.LAST_LAYER_NAME_SOURCE] = ModelHandler(self.source_model).layer_names[-1]
         return attr_dict
 
-    def set_attributes(self, input_dict):
+    def _set_attributes(self, input_dict):
         """
         Set attributes of class from input_dict.
         These attributes are the same as those returned by get_attributes method.
