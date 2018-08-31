@@ -39,7 +39,7 @@ predictions = repurposer.predict_label(test_iterator)
 * [Tutorial: Introduction and transfer learning for image data](https://xfer.readthedocs.io/en/master/demos/xfer-overview.html)
 * [Tutorial: Transfer learning with automatic hyperparameter tuning](https://xfer.readthedocs.io/en/master/demos/xfer-hpo.html)
 * [Tutorial: Transfer learning for text data](https://xfer.readthedocs.io/en/master/demos/xfer-text-transfer.html)
-* [Tutorial: Creating your own custom repurposer](https://xfer.readthedocs.io/en/master/demos/xfer-custom-repurosers.html)
+* [Tutorial: Creating your own custom repurposer](https://xfer.readthedocs.io/en/master/demos/xfer-custom-repurposers.html)
 * [Tutorial: xfer.ModelHandler for easy manipulation and inspection of MXNet models](https://xfer.readthedocs.io/en/master/demos/xfer-modelhandler.html)
 
 ## Installation
