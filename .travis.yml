@@ -30,7 +30,7 @@ install:
 script:
   - flake8
   - pytest --durations=0 --cov=./ tests/unit/
-  - pytest --durations=0 --cov=./ tests/integration/
+  - pytest --durations=0 tests/integration/
 after_success:
   - codecov
 jobs:
