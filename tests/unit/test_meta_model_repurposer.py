@@ -167,12 +167,17 @@ class MetaModelRepurposerTestCase(TestCase):
                                                          meta_model_data.feature_indices_per_layer)
 
     def test_serialisation(self, mock_model_handler):
-        if self.repurposer_class in [MetaModelRepurposer, GpRepurposer]:
+        if self.repurposer_class == MetaModelRepurposer:  # base class
             return
         self._test_save_load_repurposed_model(mock_model_handler, save_source_model=True)
         self._test_save_load_repurposed_model(mock_model_handler, save_source_model=False)
 
     def _test_save_load_repurposed_model(self, mock_model_handler, save_source_model):
+        # To speed-up unit test running time. Accuracy is validated in integration tests.
+        num_train_points = 10
+        self.train_features = self.train_features[:num_train_points]
+        self.train_labels = self.train_labels[:num_train_points]
+
         mock_model_handler.return_value = RepurposerTestUtils.get_mock_model_handler_object()
         file_path = 'test_serialisation'
         RepurposerTestUtils._remove_files_with_prefix(file_path)
