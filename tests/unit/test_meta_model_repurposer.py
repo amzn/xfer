@@ -252,8 +252,9 @@ class MetaModelRepurposerTestCase(TestCase):
 
         # Train or Load target model from file
         if self.repurposer_class == GpRepurposer:
+            num_datapoints_train = 10
             mock_model_handler.return_value.get_layer_output.return_value =\
-                {'l1': self.train_features}, self.train_labels
+                {'l1': self.train_features[:num_datapoints_train]}, self.train_labels[:num_datapoints_train]
             repurposer.repurpose(self.mock_object)
         else:
             with open(self.target_model_path, 'rb') as target_model:
@@ -292,14 +293,23 @@ class MetaModelRepurposerTestCase(TestCase):
 
         self._validate_prediction_results(results, test_predict_probability, expected_accuracy)
 
-    def _validate_prediction_results(self, results, test_predict_probability, expected_accuracy):
+    def _validate_prediction_results(self, results, test_predict_probability, expected_accuracy, num_predictions=None):
+        if num_predictions is None:
+            test_labels = self.test_labels
+            n_test_instances = self.n_test_instances
+        else:
+            assert num_predictions < len(self.test_labels), 'More predictions ({}), than labels ({})'.format(
+                                                                                num_predictions, len(self.test_labels))
+            test_labels = self.test_labels[:num_predictions]
+            n_test_instances = len(test_labels)
+
         # Validate type of prediction results
         self.assertTrue(type(results) == np.ndarray,
                         "Prediction results expected to be numpy array. Instead got: {}".format(type(results)))
 
         # Validate shape of prediction results
-        expected_shape = (self.n_test_instances, self.n_classes) if test_predict_probability else (
-            self.n_test_instances,)
+        expected_shape = (n_test_instances, self.n_classes) if test_predict_probability else (
+            n_test_instances,)
         self.assertTrue(results.shape == expected_shape,
                         "Prediction results shape is incorrect. Expected: {}. Got: {}".format(expected_shape,
                                                                                               results.shape))
@@ -307,12 +317,12 @@ class MetaModelRepurposerTestCase(TestCase):
         # Validate if prediction probabilities sum to 1
         if test_predict_probability:
             probability_sum = np.sum(results, axis=1)
-            array_of_ones = np.ones(shape=(self.n_test_instances,))
+            array_of_ones = np.ones(shape=(n_test_instances,))
             self.assertTrue(np.allclose(probability_sum, array_of_ones), "Sum of predicted probabilities is not 1")
 
         # Validate accuracy of prediction results
         labels = np.argmax(results, axis=1) if test_predict_probability else results
-        accuracy = np.mean(labels == self.test_labels)
+        accuracy = np.mean(labels == test_labels)
         self.assertTrue(np.isclose(accuracy, expected_accuracy),
                         "Prediction accuracy is incorrect. Expected: {}. Actual: {}".format(expected_accuracy,
                                                                                             accuracy))
