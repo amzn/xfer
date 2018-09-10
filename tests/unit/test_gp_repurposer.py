@@ -132,7 +132,6 @@ class GpRepurposerTestCase(MetaModelRepurposerTestCase):
         self._test_gp_serialisation(sparse_gp=False, multiple_kernels=False)
 
     def _test_gp_serialisation(self, sparse_gp, multiple_kernels):
-        return  # Remove this line on release of GPy 1.9.3 with serialization support
         gp_repurposer = GpRepurposer(self.source_model, self.source_model_layers, apply_l2_norm=True)
         num_inducing = gp_repurposer.NUM_INDUCING_SPARSE_GP
 
