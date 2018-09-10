@@ -110,6 +110,7 @@ class GpRepurposerTestCase(MetaModelRepurposerTestCase):
         mock_model_handler.return_value = RepurposerTestUtils.get_mock_model_handler_object()
         mock_model_handler.return_value.get_layer_output.return_value = {'l1': self.train_features}, self.train_labels
         gp_repurposer = GpRepurposer(self.source_model, self.source_model_layers)
+        gp_repurposer.NUM_INDUCING_SPARSE_GP = 5  # To speed-up unit test running time
         self._run_common_repurposer_tests(gp_repurposer)
 
     def _validate_trained_model(self, target_model):
