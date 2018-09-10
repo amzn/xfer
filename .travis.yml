@@ -21,7 +21,9 @@ before_install: |
     pip -V
     if [ $PYTHON == 3.4.4 ] || [ $PYTHON == 3.5.1 ]; then
       # GPy requires numpy during setup for Python versions less than 3.6
-      pip install numpy
+      # pip install numpy
+      echo $PYTHON
+      pip freeze
     fi
   fi
 install:
