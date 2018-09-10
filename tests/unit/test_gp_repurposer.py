@@ -31,7 +31,7 @@ class GpRepurposerTestCase(MetaModelRepurposerTestCase):
         self.expected_accuracy_from_features = 0.7
         self.train_feature_indices = np.arange(0, self.train_features.shape[1])
         self.feature_mean = self.train_features.mean(axis=0)
-        self.num_data_points = 10
+        self.num_data_points_to_predict = 10
 
     def test_train_model_from_features(self):
         self._test_train_model_from_features(sparse_gp=True, multiple_kernels=True)
@@ -88,19 +88,21 @@ class GpRepurposerTestCase(MetaModelRepurposerTestCase):
         gp_repurposer = GpRepurposer(self.source_model, self.source_model_layers, apply_l2_norm=True)
         gp_repurposer.target_model = gp_repurposer._train_model_from_features(self.train_features, self.train_labels,
                                                                               {'l1': self.train_feature_indices})
-        predicted_labels = gp_repurposer._predict_label_from_features(self.test_features[:self.num_data_points])
+        predicted_labels = gp_repurposer._predict_label_from_features(self.test_features
+                                                                      [:self.num_data_points_to_predict])
         self._validate_prediction_results(predicted_labels, test_predict_probability=False,
                                           expected_accuracy=self.expected_accuracy_from_features,
-                                          num_predictions=self.num_data_points)
+                                          num_predictions=self.num_data_points_to_predict)
 
     def test_predict_probability_from_features(self):
         gp_repurposer = GpRepurposer(self.source_model, self.source_model_layers, apply_l2_norm=True)
         gp_repurposer.target_model = gp_repurposer._train_model_from_features(self.train_features, self.train_labels,
                                                                               {'l1': self.train_feature_indices})
-        predictions = gp_repurposer._predict_probability_from_features(self.test_features[:self.num_data_points])
+        predictions = gp_repurposer._predict_probability_from_features(self.test_features
+                                                                       [:self.num_data_points_to_predict])
         self._validate_prediction_results(predictions, test_predict_probability=True,
                                           expected_accuracy=self.expected_accuracy_from_features,
-                                          num_predictions=self.num_data_points)
+                                          num_predictions=self.num_data_points_to_predict)
 
     @patch(RepurposerTestUtils.META_MODEL_REPURPOSER_MODEL_HANDLER_CLASS)
     def test_repurpose(self, mock_model_handler):

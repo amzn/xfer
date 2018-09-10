@@ -252,8 +252,9 @@ class MetaModelRepurposerTestCase(TestCase):
 
         # Train or Load target model from file
         if self.repurposer_class == GpRepurposer:
+            num_datapoints_train = 10
             mock_model_handler.return_value.get_layer_output.return_value =\
-                {'l1': self.train_features[:self.num_data_points]}, self.train_labels[:self.num_data_points]
+                {'l1': self.train_features[:num_datapoints_train]}, self.train_labels[:num_datapoints_train]
             repurposer.repurpose(self.mock_object)
         else:
             with open(self.target_model_path, 'rb') as target_model:
