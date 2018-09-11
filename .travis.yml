@@ -31,25 +31,25 @@ install:
   - pip freeze
 script:
   - flake8
-  # - pytest --durations=0 --cov=./ tests/unit/
-  # - pytest --durations=0 tests/integration/
-# after_success:
-#   - codecov
+  - pytest --durations=0 --cov=./ tests/unit/
+  - pytest --durations=0 tests/integration/
+after_success:
+  - codecov
 jobs:
   include:
-    # - os: osx
-    #   language: generic
-    #   python: '3.4'
-    #   # Full version number required
-    #   env: PYTHON=3.4.4
-    # - os: osx
-    #   language: generic
-    #   python: '3.5'
-    #   env: PYTHON=3.5.1
-    # - os: osx
-    #   language: generic
-    #   python: '3.6'
-    #   env: PYTHON=3.6.6
+    - os: osx
+      language: generic
+      python: '3.4'
+      # Full version number required
+      env: PYTHON=3.4.4
+    - os: osx
+      language: generic
+      python: '3.5'
+      env: PYTHON=3.5.1
+    - os: osx
+      language: generic
+      python: '3.6'
+      env: PYTHON=3.6.6
     - stage: release
       python: '3.6' # Official supported Python dist.
       deploy:
@@ -64,16 +64,8 @@ jobs:
       language: generic
       python: '3.6'
       env: PYTHON=3.6.6
-      # type: cron
+      type: cron
       script:
         - brew install graphviz
-        - pip install -r docs/demos/requirements.txt
-        - pytest --durations=0 tests/notebook
-    - os: linux
-      language: python
-      python: '3.6'
-      # type: cron
-      script:
-        - sudo apt-get install graphviz
         - pip install -r docs/demos/requirements.txt
         - pytest --durations=0 tests/notebook
