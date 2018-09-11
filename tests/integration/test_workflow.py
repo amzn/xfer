@@ -60,8 +60,6 @@ class WorkflowTestCase(TestCase):
         """
         if self.__class__ == WorkflowTestCase:  # base class
             return
-        if self.__class__ == GpWorkflowTestCase:  # Remove after release of GPy 1.9.3
-            return
         # remove any old saved repurposer files
         RepurposerTestUtils._remove_files_with_prefix(self.save_name)
 
@@ -95,8 +93,6 @@ class WorkflowTestCase(TestCase):
     def test_load_pre_saved_repurposer(self):
         """ Test case to check for backward compatibility of deserialization """
         if self.__class__ == WorkflowTestCase:  # base class
-            return
-        if self.__class__ == GpWorkflowTestCase:  # Remove after release of GPy 1.9.3
             return
         # Load pre-saved repurposer from file
         repurposer_file_prefix = self.pre_saved_prefix + self.__class__.__name__

@@ -110,6 +110,7 @@ class GpRepurposerTestCase(MetaModelRepurposerTestCase):
         mock_model_handler.return_value = RepurposerTestUtils.get_mock_model_handler_object()
         mock_model_handler.return_value.get_layer_output.return_value = {'l1': self.train_features}, self.train_labels
         gp_repurposer = GpRepurposer(self.source_model, self.source_model_layers)
+        gp_repurposer.NUM_INDUCING_SPARSE_GP = 5  # To speed-up unit test running time
         self._run_common_repurposer_tests(gp_repurposer)
 
     def _validate_trained_model(self, target_model):
@@ -132,16 +133,16 @@ class GpRepurposerTestCase(MetaModelRepurposerTestCase):
         self._test_predict(mock_model_handler, validate_method, test_predict_probability=True,
                            expected_accuracy=self.expected_accuracy)
 
-    def test_gp_serialisation(self):
+    def test_serialisation(self):
         self._test_gp_serialisation(sparse_gp=True, multiple_kernels=False)
         self._test_gp_serialisation(sparse_gp=True, multiple_kernels=True)
         self._test_gp_serialisation(sparse_gp=False, multiple_kernels=True)
         self._test_gp_serialisation(sparse_gp=False, multiple_kernels=False)
 
     def _test_gp_serialisation(self, sparse_gp, multiple_kernels):
-        return  # Remove this line on release of GPy 1.9.3 with serialization support
         gp_repurposer = GpRepurposer(self.source_model, self.source_model_layers, apply_l2_norm=True)
-        num_inducing = gp_repurposer.NUM_INDUCING_SPARSE_GP
+        num_inducing = 5
+        gp_repurposer.NUM_INDUCING_SPARSE_GP = num_inducing
 
         if not sparse_gp:  # Select a small data set to apply normal GP classification
             self.train_features = self.train_features[:num_inducing]
@@ -166,8 +167,10 @@ class GpRepurposerTestCase(MetaModelRepurposerTestCase):
         self._compare_gp_repurposers(gp_repurposer, loaded_repurposer)
 
         # Get prediction results using both repurposers
-        predictions_before = gp_repurposer._predict_probability_from_features(self.test_features)
-        predictions_after = loaded_repurposer._predict_probability_from_features(self.test_features)
+        predictions_before = gp_repurposer._predict_probability_from_features(self.test_features
+                                                                              [:self.num_data_points_to_predict])
+        predictions_after = loaded_repurposer._predict_probability_from_features(self.test_features
+                                                                                 [:self.num_data_points_to_predict])
 
         # Compare probabilities predicted per test instance
         self.assertTrue(predictions_before.shape == predictions_after.shape,
@@ -181,8 +184,8 @@ class GpRepurposerTestCase(MetaModelRepurposerTestCase):
 
         # Validate if accuracy is above expected threshold
         predicted_labels = np.argmax(predictions_after, axis=1)
-        accuracy = np.mean(predicted_labels == self.test_labels)
-        self.assertTrue(accuracy > 0.6, "Accuracy {} less than 0.6".format(accuracy))
+        accuracy = np.mean(predicted_labels == self.test_labels[:self.num_data_points_to_predict])
+        self.assertTrue(accuracy >= 0.5, "Accuracy {} less than 0.5".format(accuracy))
 
     def _save_and_load_repurposer(self, gp_repurposer):
         file_path = 'test_serialisation'

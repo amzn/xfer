@@ -241,7 +241,6 @@ class GpRepurposer(MetaModelRepurposer):
         :param str file_prefix: Prefix of file path to save the serialized repurposer to.
         :return: None
         """
-        raise NotImplementedError('This feature will be enabled after the release of GPy 1.9.3')
         # Get constructor params. This will be used to recreate repurposer object in deserialization flow.
         output_dict = {repurposer_keys.PARAMS: self.get_params()}
 
