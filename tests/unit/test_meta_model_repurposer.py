@@ -347,7 +347,12 @@ class MetaModelRepurposerTestCase(TestCase):
 
     def _test_repurpose_calls_validate(self, mock_model_handler, mock_validate_method):
         mock_model_handler.return_value = RepurposerTestUtils.get_mock_model_handler_object()
-        mock_model_handler.return_value.get_layer_output.return_value = self.train_feature_dict, self.train_labels
+        # Use subset of train_feature_dict and train_labels to speed up test
+        N = 2
+        train_feature_dict = {'layer1': self.train_feature_dict['layer1'][:N]}
+        train_labels = self.train_labels[:N]
+
+        mock_model_handler.return_value.get_layer_output.return_value = train_feature_dict, train_labels
         repurposer = self.repurposer_class(self.source_model, self.source_model_layers)
 
         mock_validate_method.reset_mock()
