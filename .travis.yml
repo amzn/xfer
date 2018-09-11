@@ -66,6 +66,7 @@ jobs:
       env: PYTHON=3.6.6
       # type: cron
       script:
+        - brew install graphviz
         - pip install -r docs/demos/requirements.txt
         - pytest --durations=0 tests/notebook
     - os: linux
@@ -73,5 +74,6 @@ jobs:
       python: '3.6'
       # type: cron
       script:
+        - sudo apt-get install graphviz
         - pip install -r docs/demos/requirements.txt
         - pytest --durations=0 tests/notebook
