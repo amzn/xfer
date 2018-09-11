@@ -60,7 +60,7 @@ jobs:
         on:
           branch: master
     - stage: notebooks
-    - os: osx
+      os: osx
       language: generic
       python: '3.6'
       env: PYTHON=3.6.6
