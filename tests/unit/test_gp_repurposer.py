@@ -32,6 +32,7 @@ class GpRepurposerTestCase(MetaModelRepurposerTestCase):
         self.train_feature_indices = np.arange(0, self.train_features.shape[1])
         self.feature_mean = self.train_features.mean(axis=0)
         self.num_data_points_to_predict = 10
+        self.num_data_points_to_train = 10
 
     def test_train_model_from_features(self):
         self._test_train_model_from_features(sparse_gp=True, multiple_kernels=True)
@@ -42,7 +43,7 @@ class GpRepurposerTestCase(MetaModelRepurposerTestCase):
     def _test_train_model_from_features(self, sparse_gp, multiple_kernels):
         gp_repurposer = GpRepurposer(self.source_model, self.source_model_layers)
 
-        num_inducing = 10
+        num_inducing = self.num_data_points_to_train
         gp_repurposer.NUM_INDUCING_SPARSE_GP = num_inducing
 
         if not sparse_gp:  # Select a small data set to apply normal GP classification
@@ -86,8 +87,10 @@ class GpRepurposerTestCase(MetaModelRepurposerTestCase):
 
     def test_predict_label_from_features(self):
         gp_repurposer = GpRepurposer(self.source_model, self.source_model_layers, apply_l2_norm=True)
-        gp_repurposer.target_model = gp_repurposer._train_model_from_features(self.train_features, self.train_labels,
-                                                                              {'l1': self.train_feature_indices})
+        gp_repurposer.target_model = gp_repurposer._train_model_from_features(
+            self.train_features[:self.num_data_points_to_train],
+            self.train_labels[:self.num_data_points_to_train],
+            {'l1': self.train_feature_indices})
         predicted_labels = gp_repurposer._predict_label_from_features(self.test_features
                                                                       [:self.num_data_points_to_predict])
         self._validate_prediction_results(predicted_labels, test_predict_probability=False,
@@ -96,8 +99,10 @@ class GpRepurposerTestCase(MetaModelRepurposerTestCase):
 
     def test_predict_probability_from_features(self):
         gp_repurposer = GpRepurposer(self.source_model, self.source_model_layers, apply_l2_norm=True)
-        gp_repurposer.target_model = gp_repurposer._train_model_from_features(self.train_features, self.train_labels,
-                                                                              {'l1': self.train_feature_indices})
+        gp_repurposer.target_model = gp_repurposer._train_model_from_features(
+            self.train_features[:self.num_data_points_to_train],
+            self.train_labels[:self.num_data_points_to_train],
+            {'l1': self.train_feature_indices})
         predictions = gp_repurposer._predict_probability_from_features(self.test_features
                                                                        [:self.num_data_points_to_predict])
         self._validate_prediction_results(predictions, test_predict_probability=True,
