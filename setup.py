@@ -21,7 +21,7 @@ with open('README.md', 'r') as fh:
 
 requires = [
     'mxnet==1.2.0',
-    'numpy==1.15.0',
+    'numpy==1.14.5',
     'scikit-learn==0.19.2',
     'matplotlib==2.2.2',
     'GPy==1.9.5'
