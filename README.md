@@ -44,9 +44,11 @@ predictions = repurposer.predict_label(test_iterator)
 
 ## Installation
 * __Dependencies:__
-Primary dependencies are MXNet >=1.2 and GPy >= 1.9.3. See [requirements](requirements.txt).
+Primary dependencies are MXNet >=1.2 and GPy >= 1.9.5. See [requirements](requirements.txt).
 * __Supported architectures / versions:__
-Tested on Python 3.4+ on MacOS and Amazon Linux.
+Python 3.6+ on MacOS and Amazon Linux. 
+
+    Also tested on Python 3.4 and 3.5. Kindly note that for these Python versions, NumPy must be pre-installed for GPy (dependency of Xfer) to work.
 
 - __Install with pip:__
 ```
