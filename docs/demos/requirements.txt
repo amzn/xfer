@@ -1,3 +1,4 @@
 nbconvert==5.3.1
 nbformat==4.4.0
-jupyter
+jupyter>=1.0.0
+gpyopt>=1.2.5
