@@ -33,8 +33,8 @@ script:
   - flake8
   # - pytest --durations=0 --cov=./ tests/unit/
   # - pytest --durations=0 tests/integration/
-after_success:
-  - codecov
+# after_success:
+#   - codecov
 jobs:
   include:
     # - os: osx
@@ -60,10 +60,17 @@ jobs:
         on:
           branch: master
     - stage: notebooks
-      os: osx
+    - os: osx
       language: generic
       python: '3.6'
       env: PYTHON=3.6.6
+      # type: cron
+      script:
+        - pip install -r docs/demos/requirements.txt
+        - pytest --durations=0 tests/notebook
+    - os: linux
+      language: python
+      python: '3.6'
       # type: cron
       script:
         - pip install -r docs/demos/requirements.txt
