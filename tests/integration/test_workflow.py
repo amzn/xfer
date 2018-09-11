@@ -128,10 +128,12 @@ class SvmWorkflowTestCase(WorkflowTestCase):
 class GpWorkflowTestCase(WorkflowTestCase):
     def setUp(self):
         super().setUp()
-        self.expected_accuracy = 0.92
+        self.expected_accuracy = 0.88
 
     def get_repurposer(self, source_model):
-        return xfer.GpRepurposer(source_model, self.meta_model_feature_layer_name, apply_l2_norm=True)
+        rep = xfer.GpRepurposer(source_model, self.meta_model_feature_layer_name, apply_l2_norm=True)
+        rep.NUM_INDUCING_SPARSE_GP = 5
+        return rep
 
 
 class BnnWorkflowTestCase(WorkflowTestCase):
