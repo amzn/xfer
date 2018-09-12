@@ -50,7 +50,11 @@ jobs:
       language: generic
       python: '3.6'
       env: PYTHON=3.6.6
+    - os: linux
+      python: '3.6'
+      if: branch != master
     - stage: release
+      if: branch = master
       python: '3.6' # Official supported Python dist.
       deploy:
         provider: pypi
