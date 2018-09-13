@@ -1,0 +1,1 @@
+Xfer is a library that allows quick and easy transfer of knowledge stored in deep neural networks implemented in MXNet. Xfer can be used with data of arbitrary numeric format, and can be applied to the common cases of image or text data.
