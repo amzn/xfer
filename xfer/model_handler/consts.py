@@ -32,6 +32,9 @@ LAYER = 'layer_factory_list'
 NAME = 'name'
 ATTRIBUTES = 'attrs'
 INPUTS = 'inputs'
+ARG_NODES = 'arg_nodes'
+NODE_PTR = 'node_row_ptr'
+HEADS = 'heads'
 
 
 class LayerType(Enum):

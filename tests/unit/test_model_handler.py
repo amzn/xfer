@@ -11,7 +11,7 @@
 #   express or implied. See the License for the specific language governing
 #   permissions and limitations under the License.
 # ==============================================================================
-from unittest import mock, TestCase
+from unittest import TestCase
 
 import json
 import os
@@ -20,7 +20,7 @@ import numpy as np
 from collections import OrderedDict
 
 from xfer import model_handler
-from xfer.model_handler import consts, layer_factory, exceptions
+from xfer.model_handler import consts, exceptions
 
 
 class TestModelHandler(TestCase):
@@ -121,25 +121,10 @@ class TestModelHandler(TestCase):
         with self.assertRaises(model_handler.exceptions.ModelError):
             self.mh.drop_layer_bottom(8)
 
-    def test_drop_layer_bottom_no_first_layer(self):
-        with open('tests/data/symbol_dict.json') as json_data:
-            sym_dict = json.load(json_data)
-        sym_dict[consts.NODES] = [node for node in sym_dict[consts.NODES] if node[consts.OPERATION] == consts.NO_OP]
-
-        with mock.patch('xfer.model_handler.ModelHandler._get_symbol_dict', return_value=sym_dict):
-            with self.assertRaises(model_handler.exceptions.ModelError):
-                self.mh.drop_layer_bottom()
-
-    def test_add_layer_top_model_error(self):
-        # Assert model error raised when a layer is added above an output layer
-        layer1 = layer_factory.FullyConnected(name='fc1', num_hidden=5)
-        with self.assertRaises(model_handler.exceptions.ModelError):
-            self.mh.add_layer_top([layer1])
-
     def test_add_layer_top(self):
         # Drop output layer so that layers can be added to top
         self.mh.drop_layer_top()
-        layer1 = layer_factory.FullyConnected(name='fc1', num_hidden=5)
+        layer1 = mx.sym.FullyConnected(name='fc1', num_hidden=5)
         assert 'fc1' not in list(self.mh.layer_type_dict.keys())
 
         outputs_pre = self.mh.symbol.get_internals().list_outputs()
@@ -151,8 +136,8 @@ class TestModelHandler(TestCase):
 
     def test_add_layer_top_2(self):
         self.mh.drop_layer_top()
-        layer1 = layer_factory.FullyConnected(name='fc1', num_hidden=5)
-        layer2 = layer_factory.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
+        layer1 = mx.sym.FullyConnected(name='fc1', num_hidden=5)
+        layer2 = mx.sym.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
         for layer_name in ['fc1', 'conv1_1']:
             assert layer_name not in list(self.mh.layer_type_dict.keys())
 
@@ -168,8 +153,8 @@ class TestModelHandler(TestCase):
 
     def test_add_layer_top_list(self):
         self.mh.drop_layer_top()
-        layer1 = layer_factory.FullyConnected(name='fc1', num_hidden=5)
-        layer2 = layer_factory.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
+        layer1 = mx.sym.FullyConnected(name='fc1', num_hidden=5)
+        layer2 = mx.sym.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
         for layer_name in ['fc1', 'conv1_1']:
             assert layer_name not in list(self.mh.layer_type_dict.keys())
 
@@ -182,14 +167,8 @@ class TestModelHandler(TestCase):
         assert outputs_post == outputs_pre + ['fc1_weight', 'fc1_bias', 'fc1_output', 'conv1_1_weight', 'conv1_1_bias',
                                               'conv1_1_output']
 
-    def test_add_layer_bottom_output_layer(self):
-        # Assert that adding an output layer to the bottom of the model raises a model error
-        layer1 = layer_factory.SoftmaxOutput(name='softmax')
-        with self.assertRaises(model_handler.exceptions.ModelError):
-            self.mh.add_layer_bottom([layer1])
-
     def test_add_layer_bottom(self):
-        layer1 = layer_factory.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
+        layer1 = mx.sym.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
         assert 'conv1_1' not in list(self.mh.layer_type_dict.keys())
 
         outputs_pre = self.mh.symbol.get_internals().list_outputs()
@@ -200,8 +179,8 @@ class TestModelHandler(TestCase):
         assert outputs_post == [self.data_name, 'conv1_1_weight', 'conv1_1_bias', 'conv1_1_output'] + outputs_pre[1:]
 
     def test_add_layer_bottom_2(self):
-        layer1 = layer_factory.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
-        layer2 = layer_factory.FullyConnected(name='fc1', num_hidden=10)
+        layer1 = mx.sym.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
+        layer2 = mx.sym.FullyConnected(name='fc1', num_hidden=10)
         for layer_name in ['fc1', 'conv1_1']:
             assert layer_name not in list(self.mh.layer_type_dict.keys())
 
@@ -216,8 +195,8 @@ class TestModelHandler(TestCase):
                                 'conv1_1_bias', 'conv1_1_output'] + outputs_pre[1:]
 
     def test_add_layer_bottom_list(self):
-        layer1 = layer_factory.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
-        layer2 = layer_factory.FullyConnected(name='fc1', num_hidden=10)
+        layer1 = mx.sym.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
+        layer2 = mx.sym.FullyConnected(name='fc1', num_hidden=10)
         for layer_name in ['fc1', 'conv1_1']:
             assert layer_name not in list(self.mh.layer_type_dict.keys())
 
@@ -477,18 +456,6 @@ class TestModelHandler(TestCase):
         self.mh._validate_layer_name('conv3')
         self.mh._validate_layer_name('weighted')
 
-    def test_model_from_nodes(self):
-        nodes = json.loads(self.mh.symbol.tojson())[consts.NODES]
-        id2name = {0: self.data_name, 1: 'conv1_weight', 2: 'conv1_bias', 3: 'conv1', 4: 'act1', 5: 'conv2_weight',
-                   6: 'conv2_bias', 7: 'conv2', 8: 'act2', 9: 'pool1', 10: 'flatten1', 11: 'fullyconnected0_weight',
-                   12: 'fullyconnected0_bias', 13: 'fullyconnected0', 14: 'softmaxoutput1_label', 15: 'softmaxoutput1'}
-
-        sym = self.mh._model_from_nodes(symbol=None, symbol_nodes=nodes, elements_offset=0, prev_symbols={},
-                                        id2name=id2name)
-
-        assert sym == self.mh.symbol
-        assert sym.get_internals().list_outputs() == self.mh.symbol.get_internals().list_outputs()
-
     def test_prune_parameters(self):
         # Assert that parameters are pruned and logs are written
         parameter_names_pre = ['conv1_weight', 'conv1_bias', 'conv1_moving_mean', 'made_up_param']
@@ -552,7 +519,7 @@ class TestModelHandler(TestCase):
         with open('tests/data/symbol_dict.json') as json_data:
             expected_symbol_dict = json.load(json_data)
 
-        real_symbol_dict = self.mh._get_symbol_dict()
+        real_symbol_dict = self.mh._get_symbol_dict(self.mh.symbol)
 
         # Remove mxnet version number from symbol dictionaries so test doesn't break on new version
         MXNET_VERSION = 'mxnet_version'

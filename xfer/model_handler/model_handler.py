@@ -18,7 +18,7 @@ import mxnet as mx
 import numpy as np
 from collections import OrderedDict
 
-from . import exceptions, consts, layer_factory
+from . import exceptions, consts
 
 
 class ModelHandler(object):
@@ -65,25 +65,33 @@ class ModelHandler(object):
         :param int n: Number of layers to remove from model input.
         """
         self._assert_drop_layer_valid(num_layers_to_drop)
-        symbol_nodes = self._get_symbol_dict()[consts.NODES]
-        # Get index of nth layer
-        layer_count = 0
-        n_layer_idx = 0
-        for id, node in enumerate(symbol_nodes):
-            if node[consts.OPERATION] != consts.NO_OP:
-                layer_count += 1
-            if layer_count == num_layers_to_drop:
-                n_layer_idx = id
-                break
-        # Raise error if nth layer is not found
-        if n_layer_idx == 0:
-            raise exceptions.ModelError('{}th layer could not be found'.format(num_layers_to_drop))
-        # Remove nodes in list that relate to first n layers (keep first node because this is data layer)
-        symbol_nodes = symbol_nodes[0:1] + symbol_nodes[n_layer_idx+1:]
-        id2name = {count: node[consts.LAYER_NAME] for count, node in enumerate(symbol_nodes)}
-        # Recreate model from symbol nodes
-        sym = self._model_from_nodes(None, symbol_nodes, elements_offset=-n_layer_idx, id2name=id2name,
-                                     data_name=self.data_name)
+        symbol_dict = self._get_symbol_dict(self.symbol)
+        # Determine number of nodes to delete by counting node ids which do not appear in arg_nodes
+        count = 0
+        for node_idx, _ in enumerate(symbol_dict[consts.NODES]):
+            if node_idx not in symbol_dict[consts.ARG_NODES]:
+                count += 1
+                if count >= num_layers_to_drop:
+                    break
+        delete_idx = node_idx  # We will delete nodes from 1 to delete_idx
+        # Delete nodes from symbol dict
+        for i in reversed(range(1, delete_idx+1)):
+            print(symbol_dict[consts.NODES][i])
+            del symbol_dict[consts.NODES][i]
+        # Update arg_nodes (list of nodes that do not contain operators)
+        symbol_dict[consts.ARG_NODES] = [0] + [i-delete_idx if c >= delete_idx else i
+                                               for c, i in enumerate(symbol_dict[consts.ARG_NODES]) if i > delete_idx]
+        # Updates heads - gives node idx of output
+        for j in symbol_dict[consts.HEADS]:
+            j[0] -= delete_idx
+        # Update node_row_ptr (list of ids of all nodes)
+        symbol_dict[consts.NODE_PTR] = symbol_dict[consts.NODE_PTR][:-delete_idx]
+        # Update inputs of nodes
+        for node in symbol_dict[consts.NODES]:
+            for ip in node[consts.INPUTS]:
+                ip[0] -= delete_idx
+        sym = mx.sym.load_json(json.dumps(symbol_dict))
+
         logging.info('{} deleted from model bottom'.format(', '.join(self.layer_names[:num_layers_to_drop])))
         self.update_sym(sym)
 
@@ -96,12 +104,38 @@ class ModelHandler(object):
         """
         if '_label' in self.symbol.get_internals().list_outputs()[consts.LABEL_IDX]:
             raise exceptions.ModelError('Cannot add layer above output layer')
-        sym = self.symbol
         added_layer_names = []
-        for lf in layer_factory_list:
-            self._validate_layer_name(lf.attributes[consts.NAME])
-            sym = lf.create_layer(sym)
-            added_layer_names.append(lf.attributes[consts.NAME])
+
+        net_symbol_dict = self._get_symbol_dict(self.symbol)
+        for layer_symbol in layer_factory_list:
+            added_layer_names.append(layer_symbol.name)
+            layer_symbol_dict = self._get_symbol_dict(layer_symbol)
+
+            num_existing_nodes = len(net_symbol_dict[consts.NODES])
+            num_nodes_added = len(layer_symbol_dict[consts.NODES]) - 1  # -1 for data node in layer symbol dict
+
+            # Update arg_nodes (list of nodes that do not contain operators)
+            # Concatenate existing network arg_nodes with shifted layer arg_nodes (omitting data node of layer)
+            for arg_node in layer_symbol_dict[consts.ARG_NODES][1:]:
+                net_symbol_dict[consts.ARG_NODES].append(arg_node + num_existing_nodes - 1)
+
+            # Updates heads - gives node idx of output
+            for j in net_symbol_dict[consts.HEADS]:
+                j[0] += num_nodes_added
+
+            # Update node_row_ptr (list of ids of all nodes)
+            net_symbol_dict[consts.NODE_PTR] = list(range(0, max(net_symbol_dict[consts.NODE_PTR])+num_nodes_added+1))
+
+            # Update inputs of nodes
+            for node in layer_symbol_dict[consts.NODES]:
+                for ip in node[consts.INPUTS]:
+                    ip[0] += num_existing_nodes - 1
+
+            # Concatentate nodes list
+            net_symbol_dict[consts.NODES] = net_symbol_dict[consts.NODES] + layer_symbol_dict[consts.NODES][1:]
+
+        sym = mx.sym.load_json(json.dumps(net_symbol_dict))
+
         self.update_sym(sym)
         logging.info('Added {} to model top'.format(', '.join(added_layer_names)))
 
@@ -113,30 +147,39 @@ class ModelHandler(object):
         :param layer_factory: List of LayerFactory objects to be added to model input.
         :type layer_factory: list(:class:`LayerFactory`)
         """
-        # Create data layer
-        symbol_nodes = self._get_symbol_dict()[consts.NODES]
-        data_layer = layer_factory.Data(name=self.data_name)
-        sym = data_layer.create_layer(None)
-        prev_symbols = {self.data_name: sym}
-        id2name = {0: self.data_name}
         added_layer_names = []
-        # Add new layers
-        for id, lf in enumerate(layer_factory_list):
-            self._validate_layer_name(lf.attributes[consts.NAME])
-            if lf.output is True:
-                raise exceptions.ModelError('Cannot add output layer to model bottom ({})'
-                                            .format(lf.attributes[consts.NAME]))
-            sym = lf.create_layer(sym)
-            prev_symbols[lf.attributes[consts.NAME]] = sym
-            # Update id2name with newly added layer
-            id2name[id + 1] = lf.attributes[consts.NAME]
-            added_layer_names.append(lf.attributes[consts.NAME])
-        # Add remaining symbol names to id2name (beginning slice at 1 to skip data node which is already in id2name)
-        for count, node in enumerate(symbol_nodes[1:]):
-            id2name[count + len(layer_factory_list) + 1] = node[consts.LAYER_NAME]
-        # Recreate model
-        sym = self._model_from_nodes(sym, symbol_nodes, elements_offset=len(layer_factory_list),
-                                     prev_symbols=prev_symbols, id2name=id2name, data_name=self.data_name)
+        net_symbol_dict = self._get_symbol_dict(self.symbol)
+
+        for layer_symbol in reversed(layer_factory_list):
+            added_layer_names.append(layer_symbol.name)
+            layer_symbol_dict = json.loads(layer_symbol.tojson())
+
+            nodes_added = len(layer_symbol_dict[consts.NODES]) - 1
+
+            # Concatentate data nodes of network, layer nodes of new layer and remainder of network nodes
+            net_symbol_dict[consts.NODES] = [net_symbol_dict[consts.NODES][0]] + \
+                layer_symbol_dict[consts.NODES][1:] + net_symbol_dict[consts.NODES][1:]
+
+            # Update arg_nodes (list of nodes that do not contain operators)
+            # Concatenate arg nodes of layer with shifted arg nodes of network (omitting network data node)
+            for arg_node in net_symbol_dict[consts.ARG_NODES][1:]:
+                layer_symbol_dict[consts.ARG_NODES].append(arg_node + nodes_added)
+            net_symbol_dict[consts.ARG_NODES] = layer_symbol_dict[consts.ARG_NODES]
+
+            # Updates heads - gives node idx of output
+            for j in net_symbol_dict[consts.HEADS]:
+                j[0] += nodes_added
+
+            # Update node_row_ptr (list of ids of all nodes)
+            net_symbol_dict[consts.NODE_PTR] = list(range(0, max(net_symbol_dict[consts.NODE_PTR])+nodes_added+1))
+
+            # Update inputs of nodes
+            for node in net_symbol_dict[consts.NODES][nodes_added+1:]:
+                for ip in node[consts.INPUTS]:
+                    ip[0] += nodes_added
+
+        sym = mx.sym.load_json(json.dumps(net_symbol_dict))
+
         self.update_sym(sym)
         logging.info('Added {} to model bottom'.format(', '.join(added_layer_names)))
 
@@ -302,33 +345,6 @@ class ModelHandler(object):
             if '_' + suffix in layer_name:
                 raise ValueError("Layer name cannot contain '{}'".format(suffix))
 
-    @staticmethod
-    def _model_from_nodes(symbol, symbol_nodes, elements_offset=0, prev_symbols=None, id2name=None,
-                          data_name=consts.DATA):
-        """
-        Recreate model from dictionary above symbol.
-
-        :param :class:`LayerFactory` symbol: Symbol on which to create model.
-        :param list symbol_nodes: List of dictionaries which desribe model layers.
-        :param int elements_offset: Number of layers added to model since symbol dictionary was last updated.
-        :param dict(str, :class:`Symbol`) prev_symbols: Dictionary of all MXNet symbols corresponding to previously
-                                                        added layers -- layer_name: MXNet symbol.
-        :param dict(int, str) id2name: Names of symbols in model -- {position of symbol in model: symbol name}.
-        :rtype: :class:`Symbol`
-        """
-        prev_symbols = {} if prev_symbols is None else prev_symbols
-        for count, node in enumerate(symbol_nodes):
-            node[consts.ELEMENTS_OFFSET] = elements_offset
-            node[consts.PREV_SYMBOLS] = prev_symbols
-            node[consts.ID2NAME] = id2name
-            node[consts.DATA] = data_name
-            new_layer, input_symbol = layer_factory.LayerFactory._from_dict(node)
-            # If node does not represent a layer operation then new_layer will be None
-            if new_layer:
-                symbol = new_layer.create_layer(input_symbol)
-                prev_symbols[new_layer.attributes[consts.NAME]] = symbol
-        return symbol
-
     def _prune_parameters(self, parameter_names):
         """
         Remove parameter names from list which are not in model parameter dicts.  Logs warning for removed names.
@@ -387,7 +403,7 @@ class ModelHandler(object):
         :return: Dictionary of layer names to layer types
         :rtype: dict
         """
-        symbol_dict = self._get_symbol_dict()
+        symbol_dict = self._get_symbol_dict(self.symbol)
         # Each layer in the model has one output (along with a bias or weight etc.) so we filter for all the list
         # entries containing '_output' and then we remove this substring from the list entries to leave just the layer
         # names
@@ -398,14 +414,15 @@ class ModelHandler(object):
             layer_type_dict[layer[consts.LAYER_NAME]] = layer[consts.OPERATION]
         return layer_type_dict
 
-    def _get_symbol_dict(self):
+    @staticmethod
+    def _get_symbol_dict(symbol):
         """
         Get symbol dictionary.
 
         :return: Symbol dictionary
         :rtype: dict
         """
-        return json.loads(self.symbol.tojson())
+        return json.loads(symbol.tojson())
 
     @property
     def layer_names(self):

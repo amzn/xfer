@@ -15,7 +15,6 @@ import mxnet as mx
 
 from .neural_network_repurposer import NeuralNetworkRepurposer
 from .model_handler.model_handler import ModelHandler
-from .model_handler import layer_factory
 from .constants import neural_network_repurposer_keys as keys
 
 
@@ -95,11 +94,11 @@ class NeuralNetworkFineTuneRepurposer(NeuralNetworkRepurposer):
         model_handler.update_sym(target_symbol)
 
         # Add a fully connected layer (with nodes equal to number of target classes) and a softmax output layer on top
-        fully_connected_layer = layer_factory.FullyConnected(num_hidden=self.target_class_count,
-                                                             name='fc_from_fine_tune_repurposer')
+        fully_connected_layer = mx.sym.FullyConnected(num_hidden=self.target_class_count,
+                                                      name='fc_from_fine_tune_repurposer')
         # Softmax layer name should be set to the name provided by the iterator
         softmax_name = train_iterator.provide_label[0][0].replace('_label', '')
-        softmax_output_layer = layer_factory.SoftmaxOutput(name=softmax_name)
+        softmax_output_layer = mx.sym.SoftmaxOutput(name=softmax_name)
         model_handler.add_layer_top([fully_connected_layer, softmax_output_layer])
 
         # Create and return target MXNet module using the new symbol and params
