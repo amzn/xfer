@@ -4,3 +4,4 @@ include CODE_OF_CONDUCT.md
 include CONTRIBUTING.md
 include LICENSE
 include NOTICE
+include docs/long_description.md
