@@ -202,6 +202,12 @@ class Probability(object):
             params[key] = load_data[key]
             raw_params[key] = []
             for parameter in params[key]:
+                # Parameter class in mxnet<1.3.0 does not have _stype attribute which causes an error when Parameter
+                # saved in mxnet<1.3.0 is loaded with mxnet==1.3.0
+                try:
+                    parameter._stype
+                except AttributeError:
+                    parameter._stype = 'default'
                 raw_params[key].append(parameter.data())
 
         return params, raw_params
