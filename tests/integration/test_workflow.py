@@ -139,14 +139,14 @@ class GpWorkflowTestCase(WorkflowTestCase):
 class BnnWorkflowTestCase(WorkflowTestCase):
     def setUp(self):
         super().setUp()
-        self.min_expected_accuracy = 0.65
+        self.min_expected_accuracy = 0.59
 
     def get_repurposer(self, source_model):
         return xfer.BnnRepurposer(source_model, self.meta_model_feature_layer_name, num_samples_mc_prediction=10,
-                                  num_epochs=200, num_samples_mc=3)
+                                  num_epochs=200, num_samples_mc=5)
 
     def assert_accuracy(self, accuracy):
-        self.assertTrue(accuracy > self.min_expected_accuracy,
+        self.assertTrue(accuracy >= self.min_expected_accuracy,
                         'accuracy: {}, minimum expected: {}'.format(accuracy, self.min_expected_accuracy))
 
 

@@ -186,7 +186,7 @@ class MetaModelRepurposerTestCase(TestCase):
         repurposer = self.repurposer_class(source_model, self.source_model_layers)
         if self.repurposer_class == BnnRepurposer:
             repurposer = BnnRepurposer(source_model, self.source_model_layers, num_epochs=5,
-                                       num_samples_mc_prediction=5)
+                                       num_samples_mc_prediction=15)
         repurposer.target_model = repurposer._train_model_from_features(self.train_features, self.train_labels)
         # Manually setting provide_data and provide_label because repurpose() is not called
         repurposer.provide_data = [('data', (2, 3, 224, 224))]
