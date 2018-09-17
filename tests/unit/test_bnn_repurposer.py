@@ -37,7 +37,7 @@ class BnnRepurposerTestCase(MetaModelRepurposerTestCase):
         self.repurposer_class = BnnRepurposer
 
         # Minimum expected performance
-        self.minimum_expected_accuracy = 0.22
+        self.minimum_expected_accuracy = 0.2
 
     def test_train_model_from_features(self):
         bnn_repurposer = BnnRepurposer(self.source_model, self.source_model_layers, num_epochs=10)
@@ -202,8 +202,9 @@ class BnnRepurposerTestCase(MetaModelRepurposerTestCase):
         # Validate accuracy of prediction results
         labels = np.argmax(results, axis=1) if test_predict_probability else results
 
-        self.assertTrue(np.mean(labels == self.test_labels) > expected_minimum_accuracy, "Prediction accuracy is \
-                        incorrect. Minimum accuracy expected: {}. Actual accuracy: {}".format(expected_minimum_accuracy,
+        self.assertTrue(np.mean(labels == self.test_labels) >= expected_minimum_accuracy, "Prediction accuracy is " +
+                        "incorrect. Minimum accuracy expected: {}. Actual accuracy: {}".format(
+                        expected_minimum_accuracy,
                         np.mean(labels == self.test_labels)))
 
     def _assert_target_model_equal(self, model1, model2):

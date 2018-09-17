@@ -15,12 +15,12 @@ from setuptools import setup, find_packages
 import sys
 
 
-with open('README.md', 'r') as fh:
+with open('docs/long_description.md', 'r') as fh:
     long_description = fh.read()
 
 
 requires = [
-    'mxnet==1.2.0',
+    'mxnet>=1.2.0',
     'numpy==1.14.5',
     'scikit-learn==0.19.2',
     'matplotlib==2.2.2',
