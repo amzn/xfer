@@ -20,6 +20,9 @@ def _notebook_run(notebook):
     """
 
     temp_notebook = 'temp_notebook.ipynb'
+    if os.path.isfile(temp_notebook):
+        os.remove(temp_notebook)
+
     with open(temp_notebook, 'w') as fout:
         args = ["jupyter", "nbconvert", "--to", "notebook", "--execute",
                 "--ExecutePreprocessor.timeout=-1",
@@ -38,5 +41,8 @@ def _notebook_run(notebook):
 
 @pytest.mark.parametrize("notebook", demo_notebooks)
 def test_ipynb(notebook):
+    long_notebooks = ['xfer-hpo.ipynb']
+    if notebook in long_notebooks:
+        return  # skip slow tests
     nb, errors = _notebook_run(notebook)
     assert errors == [], 'Errors found in {}'.format(notebook)
