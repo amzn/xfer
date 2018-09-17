@@ -486,8 +486,26 @@ class TestModelHandler(TestCase):
         sym = self.mh._model_from_nodes(symbol=None, symbol_nodes=nodes, elements_offset=0, prev_symbols={},
                                         id2name=id2name)
 
-        assert sym == self.mh.symbol
-        assert sym.get_internals().list_outputs() == self.mh.symbol.get_internals().list_outputs()
+        self._compare_symbols(sym, self.mh.symbol)
+
+    @staticmethod
+    def _compare_symbols(sym1, sym2):
+        """
+        Compare two symbols.
+
+        :param sym1: Actual symbol
+        :param sym2: Expected symbol
+        """
+        assert sym1.get_internals().list_outputs() == sym2.get_internals().list_outputs(), 'Symbol outputs \
+            mismatch. Expected: {}, Got: {}'.format(sym2.get_internals().list_outputs(),
+                                                    sym1.get_internals().list_outputs())
+
+        for i, _ in enumerate(sym1.get_internals()):
+            assert sym1.get_internals()[i].get_internals().list_outputs() ==\
+                sym1.get_internals()[i].get_internals().list_outputs()
+
+        data_shape = (5, 3, 224, 224)
+        assert sym1.infer_shape(data=data_shape) == sym2.infer_shape(data=data_shape)
 
     def test_prune_parameters(self):
         # Assert that parameters are pruned and logs are written
@@ -595,7 +613,8 @@ class TestModelHandler(TestCase):
         mh.update_sym(symbol)
 
         assert mh.layer_type_dict == OrderedDict([('conv1', 'Convolution'), ('act1', 'Activation')])
-        assert mh.symbol == symbol
+        assert mh.symbol.tojson() == symbol.tojson()
+        self._compare_symbols(mh.symbol, symbol)
         assert sorted(mh.arg_params.keys()) == sorted(['conv1_weight', 'conv1_bias'])
         assert mh.aux_params == {}
 
@@ -607,6 +626,7 @@ class TestModelHandler(TestCase):
 
         assert mh.layer_type_dict == OrderedDict([('conv1', 'Convolution'), ('act1', 'Activation'),
                                                   ('conv2', 'Convolution')])
-        assert mh.symbol == symbol
+        assert mh.symbol.tojson() == symbol.tojson()
+        self._compare_symbols(mh.symbol, symbol)
         assert sorted(mh.arg_params.keys()) == sorted(['conv1_weight', 'conv2_bias', 'conv1_bias', 'conv2_weight'])
         assert mh.aux_params == {}
