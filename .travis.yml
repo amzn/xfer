@@ -68,5 +68,5 @@ jobs:
       script:
         - brew install graphviz
         - pip install -r docs/demos/requirements.txt
-        - travis_wait 60 pytest --durations=0 tests/notebook
+        - pytest --durations=0 tests/notebook
 
