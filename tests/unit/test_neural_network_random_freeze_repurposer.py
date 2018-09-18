@@ -77,4 +77,4 @@ class NeuralNetworkRandomFreezeRepurposerTestCase(NeuralNetworkRepurposerTestCas
 
     def _get_repurposer(self, source_model):
         return self.repurposer_class(source_model, target_class_count=2, random_layers=['conv2'],
-                                     fixed_layers=['conv1'])
+                                     fixed_layers=['conv1'], num_epochs=2)

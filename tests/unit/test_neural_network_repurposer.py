@@ -112,7 +112,6 @@ class NeuralNetworkRepurposerTestCase(TestCase):
         """ Test if predict method returns consistent predictions using the same model and test data """
         if self.repurposer_class != NeuralNetworkRepurposer:
             return
-
         # Create test data iterator to run predictions on
         test_iterator = RepurposerTestUtils.get_image_iterator()
         # Load a pre-trained model to predict. The model has a dropout layer used for training.
