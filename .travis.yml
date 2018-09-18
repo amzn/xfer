@@ -68,7 +68,7 @@ jobs:
       language: generic
       python: '3.6'
       env: PYTHON=3.6.6
-      # if: type = cron
+      if: type = cron  # Notebook checks will only run on regularly scheduled builds to avoid makeing PR and commit builds slow
       script:
         - brew install graphviz
         - pip install -r docs/demos/requirements.txt
