@@ -137,8 +137,7 @@ class GpRepurposer(MetaModelRepurposer):
         all_kernels = None
         for layer_name in feature_indices_per_layer:
             active_dims = feature_indices_per_layer[layer_name]  # feature indices corresponding to current layer
-            kernel = GPy.kern.RBF(input_dim=active_dims.size, name=layer_name,
-                                  active_dims=active_dims.tolist())
+            kernel = GPy.kern.RBF(input_dim=active_dims.size, name=layer_name, active_dims=active_dims.tolist())
             if all_kernels is None:
                 all_kernels = kernel
             else:
