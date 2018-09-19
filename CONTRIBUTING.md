@@ -100,6 +100,17 @@ pytest tests/unit
 pytest tests/integration
 ```
 
+#### Troubleshooting
+When running the tests on OSX, you may get this error when running the GpRepurposer.
+```
+from matplotlib.backends import _macosx
+RuntimeError: Python is not installed as a framework. The Mac OS X backend will not be able to function correctly if Python is not installed as a framework. See the Python documentation for more information on installing Python as a framework on Mac OS X. Please either reinstall Python as a framework, or try one of the other backends. If you are using (Ana)Conda please install python.app and replace the use of 'python' with 'pythonw'. See 'Working with Matplotlib on OSX' in the Matplotlib FAQ for more information.
+```
+This can be fixed by running the following command from the root directory of the repo.
+```
+echo 'backend: Agg' > matplotlibrc
+```
+
 ### Generating docs
 Documentation contributions are much appreciated! If you see something incorrect or poorly explained, please fix it and send the update!
 
