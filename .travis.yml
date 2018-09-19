@@ -5,7 +5,8 @@ python:
   - '3.5'
 before_install: |
   if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
-    brew update
+    # This line may be needed if the brew version of the TravisCI OSX machines falls behind
+    # brew update
     # Recommended for pyenv
     brew outdated openssl || brew upgrade openssl
     brew outdated readline || brew upgrade readline
