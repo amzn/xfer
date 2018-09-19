@@ -41,8 +41,5 @@ def _notebook_run(notebook):
 
 @pytest.mark.parametrize("notebook", demo_notebooks)
 def test_ipynb(notebook):
-    long_notebooks = ['xfer-hpo.ipynb']
-    if notebook in long_notebooks:
-        return  # skip slow tests
     nb, errors = _notebook_run(notebook)
     assert errors == [], 'Errors found in {}'.format(notebook)
