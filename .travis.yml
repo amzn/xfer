@@ -28,6 +28,8 @@ install:
   - pip install --upgrade pip
   - pip install -r requirements.txt
   - pip install -r test_requirements.txt
+  # work around issues with GPy and GPyOpt setting matplotlib backend
+  - "echo 'backend: Agg' > matplotlibrc"
   - pip freeze
 script:
   - flake8
