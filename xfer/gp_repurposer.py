@@ -13,7 +13,6 @@
 # ==============================================================================
 import mxnet as mx
 import numpy as np
-import GPy
 from sklearn.preprocessing import LabelBinarizer, Normalizer
 
 from .meta_model_repurposer import MetaModelRepurposer
@@ -109,6 +108,8 @@ class GpRepurposer(MetaModelRepurposer):
         return models
 
     def _train_model_for_binary_label(self, features, binary_label, kernel, do_sparse_gp):
+        # GPy is imported here in order to avoid importing it during 'import xfer'
+        import GPy
         # Train a GPy model for binary classification with given features and kernel
         if do_sparse_gp:
             model = GPy.models.SparseGPClassification(X=features, Y=binary_label, kernel=kernel,
@@ -131,6 +132,8 @@ class GpRepurposer(MetaModelRepurposer):
                  layers.
         :rtype: :class:`GPy.kern.RBF` or :class:`GPy.kern.Add`
         """
+        # GPy is imported here in order to avoid importing it during 'import xfer'
+        import GPy
         all_kernels = None
         for layer_name in feature_indices_per_layer:
             active_dims = feature_indices_per_layer[layer_name]  # feature indices corresponding to current layer
@@ -275,6 +278,8 @@ class GpRepurposer(MetaModelRepurposer):
 
     @staticmethod
     def _deserialize_target_gp_models(serialized_target_model):
+        # GPy is imported here in order to avoid importing it during 'import xfer'
+        import GPy
         # Deserialize the GP models trained per class and return
         deserialized_models = []
         for model_dict in serialized_target_model:
