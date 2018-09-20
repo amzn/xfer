@@ -89,15 +89,15 @@ Install test requirements by running:
 ```
 pip install -r test_requirements.txt
 ```
-Run the full suite of tests by running the following command from the top level directory:
+Run the unit tests by running the following command from the top level directory:
 ```
 pytest
 ```
 
-To run unit tests and integration tests separately, use:
+To run integration tests or notebook tests too, use:
 ```
-pytest tests/unit
-pytest tests/integration
+pytest --integration
+pytest --notebook
 ```
 
 #### Troubleshooting
