@@ -33,8 +33,8 @@ install:
   - pip freeze
 script:
   - flake8
-  - pytest --durations=0 --cov=./ tests/unit/
-  - pytest --durations=0 tests/integration/
+  - pytest --durations=0 --cov=./
+  - pytest --durations=0 --integration
 after_success:
   - codecov
 jobs:
@@ -63,7 +63,7 @@ jobs:
       script:
         - brew install graphviz
         - pip install -r docs/demos/requirements.txt
-        - travis_wait 40 pytest --durations=0 tests/notebook
+        - travis_wait 40 pytest --durations=0 --notebook
     - stage: release
       if: branch = master
       python: '3.6' # Official supported Python dist.

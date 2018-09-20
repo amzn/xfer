@@ -13,6 +13,7 @@
 # ==============================================================================
 from unittest import TestCase
 from abc import ABCMeta, abstractmethod
+import pytest
 
 import mxnet as mx
 import random
@@ -22,6 +23,7 @@ import xfer
 from ..repurposer_test_utils import RepurposerTestUtils
 
 
+@pytest.mark.integration
 class WorkflowTestCase(TestCase):
     __metaclass__ = ABCMeta
 
