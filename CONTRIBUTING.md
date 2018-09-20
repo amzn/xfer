@@ -100,6 +100,8 @@ pytest --integration
 pytest --notebook
 ```
 
+Before running notebook tests, be sure to import the notebook dependencies from `docs/demos/requirements`.
+
 #### Troubleshooting
 When running the tests on OSX, you may get this error when running the GpRepurposer.
 ```
