@@ -77,7 +77,7 @@ class NeuralNetworkRepurposerTestCase(TestCase):
     def _test_predict(self, mock_validate_method, test_predict_probability):
         neural_network_repurposer = NeuralNetworkRepurposer(source_model=None)
         neural_network_repurposer.target_model = mx.module.Module.load(
-            prefix=RepurposerTestUtils.MNIST_MODEL_PATH_PREFIX, epoch=10)
+            prefix=RepurposerTestUtils.MNIST_MODEL_PATH_PREFIX, epoch=10, label_names=None)
         test_iterator = RepurposerTestUtils.create_mnist_test_iterator()
         mock_validate_method.reset_mock()
 
@@ -112,12 +112,11 @@ class NeuralNetworkRepurposerTestCase(TestCase):
         """ Test if predict method returns consistent predictions using the same model and test data """
         if self.repurposer_class != NeuralNetworkRepurposer:
             return
-
         # Create test data iterator to run predictions on
         test_iterator = RepurposerTestUtils.get_image_iterator()
         # Load a pre-trained model to predict. The model has a dropout layer used for training.
         # This test is to ensure that dropout doesn't happen during prediction.
-        target_model = mx.module.Module.load(prefix=self.dropout_model_path_prefix, epoch=0)
+        target_model = mx.module.Module.load(prefix=self.dropout_model_path_prefix, epoch=0, label_names=None)
 
         # Create repurposer and set the target model loaded from file
         repurposer = NeuralNetworkRepurposer(source_model=None)
