@@ -174,7 +174,7 @@ class MetaModelRepurposerTestCase(TestCase):
 
     def _test_save_load_repurposed_model(self, mock_model_handler, save_source_model):
         # To speed-up unit test running time. Accuracy is validated in integration tests.
-        num_train_points = 10
+        num_train_points = 2
         self.train_features = self.train_features[:num_train_points]
         self.train_labels = self.train_labels[:num_train_points]
 
@@ -185,7 +185,7 @@ class MetaModelRepurposerTestCase(TestCase):
                                              data_names=('data',))
         repurposer = self.repurposer_class(source_model, self.source_model_layers)
         if self.repurposer_class == BnnRepurposer:
-            repurposer = BnnRepurposer(source_model, self.source_model_layers, num_epochs=5,
+            repurposer = BnnRepurposer(source_model, self.source_model_layers, num_epochs=1,
                                        num_samples_mc_prediction=15)
         repurposer.target_model = repurposer._train_model_from_features(self.train_features, self.train_labels)
         # Manually setting provide_data and provide_label because repurpose() is not called

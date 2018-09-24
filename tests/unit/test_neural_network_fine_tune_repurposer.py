@@ -75,4 +75,5 @@ class NeuralNetworkFineTuneRepurposerTestCase(NeuralNetworkRepurposerTestCase):
         assert params == expected_params
 
     def _get_repurposer(self, source_model):
-        return self.repurposer_class(source_model, transfer_layer_name='fullyconnected0', target_class_count=4)
+        return self.repurposer_class(source_model, transfer_layer_name='fullyconnected0', target_class_count=4,
+                                     num_epochs=2)

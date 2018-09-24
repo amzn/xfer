@@ -32,7 +32,7 @@ class SvmRepurposerTestCase(MetaModelRepurposerTestCase):
 
     def test_train_model_from_features(self):
         svm_repurposer = SvmRepurposer(self.source_model, self.source_model_layers)
-        model = svm_repurposer._train_model_from_features(self.train_features, self.train_labels)
+        model = svm_repurposer._train_model_from_features(self.train_features[:10], self.train_labels[:10])
         self._validate_trained_model(model)
 
     def test_predict_label_from_features(self):
@@ -58,7 +58,9 @@ class SvmRepurposerTestCase(MetaModelRepurposerTestCase):
     def test_repurpose(self, mock_model_handler):
         """ Test Repurpose wrapper in meta model base class using svm repurposer object"""
         mock_model_handler.return_value = RepurposerTestUtils.get_mock_model_handler_object()
-        mock_model_handler.return_value.get_layer_output.return_value = self.train_feature_dict, self.train_labels
+        N = 10
+        train_feature_dict_subset = {k: v[:N] for k, v in self.train_feature_dict.items()}
+        mock_model_handler.return_value.get_layer_output.return_value = train_feature_dict_subset, self.train_labels[:N]
         repurposer = SvmRepurposer(self.source_model, self.source_model_layers)
         self._run_common_repurposer_tests(repurposer)
 
