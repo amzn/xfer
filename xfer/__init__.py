@@ -11,10 +11,6 @@
 #   express or implied. See the License for the specific language governing
 #   permissions and limitations under the License.
 # ==============================================================================
-# matplotlib is loaded in GPy initialization and if a backend('Agg') is not set, loading fails in mac osx
-import matplotlib
-matplotlib.use('Agg')
-
 # import repurposer base classes
 from .repurposer import Repurposer  # noqa: F401
 from .meta_model_repurposer import MetaModelRepurposer  # noqa: F401
