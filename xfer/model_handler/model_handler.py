@@ -52,7 +52,7 @@ class ModelHandler(object):
         self._assert_drop_layer_valid(num_layers_to_drop)
         # Get index of new last layer
         last_layer_idx = -(num_layers_to_drop+1)
-        # symbol ending at new last layer
+        # Symbol ending at new last layer
         sym = self.symbol.get_internals()[self.layer_names[last_layer_idx] + '_output']
         logging.info('{} deleted from model top'.format(', '.join(self.layer_names[last_layer_idx + 1:])))
         self.update_sym(sym)
@@ -66,7 +66,6 @@ class ModelHandler(object):
         """
         self._assert_drop_layer_valid(num_layers_to_drop)
         symbol_dict = self._get_symbol_dict(self.symbol)
-        print('original symbol dict', symbol_dict)
         # Determine number of nodes to delete by counting node ids which do not appear in arg_nodes
         count = 0
         for node_idx, _ in enumerate(symbol_dict[consts.NODES]):
@@ -77,14 +76,10 @@ class ModelHandler(object):
         delete_idx = node_idx  # We will delete nodes from 1 to delete_idx
         # Delete nodes from symbol dict
         for i in reversed(range(1, delete_idx+1)):
-            print('node being deleted', symbol_dict[consts.NODES][i])
             del symbol_dict[consts.NODES][i]
         # Update arg_nodes (list of nodes that do not contain operators)
-        print('arg nodes before', symbol_dict[consts.ARG_NODES])
-        print('delete_idx', delete_idx)
         symbol_dict[consts.ARG_NODES] = [0] + [i-delete_idx
                                                for c, i in enumerate(symbol_dict[consts.ARG_NODES]) if i > delete_idx]
-        print('arg nodes after', symbol_dict[consts.ARG_NODES])
         # Updates heads - gives node idx of output
         for j in symbol_dict[consts.HEADS]:
             j[0] -= delete_idx
@@ -94,25 +89,24 @@ class ModelHandler(object):
         for node in symbol_dict[consts.NODES]:
             for ip in node[consts.INPUTS]:
                 ip[0] -= delete_idx
-        print('symbol_dict', symbol_dict)
         sym = mx.sym.load_json(json.dumps(symbol_dict))
 
         logging.info('{} deleted from model bottom'.format(', '.join(self.layer_names[:num_layers_to_drop])))
         self.update_sym(sym)
 
-    def add_layer_top(self, layer_factory_list):
+    def add_layer_top(self, layer_list):
         """
         Add layer to output of model.
 
-        :param layer_factory: List of LayerFactory objects to be added to model output.
-        :type layer_factory: list(:class:`LayerFactory`)
+        :param layer_list: List of MxNet symbol layers to be added to model output.
+        :type layer_list: list(:class:`mx.symbol`)
         """
         if '_label' in self.symbol.get_internals().list_outputs()[consts.LABEL_IDX]:
             raise exceptions.ModelError('Cannot add layer above output layer')
         added_layer_names = []
 
         net_symbol_dict = self._get_symbol_dict(self.symbol)
-        for layer_symbol in layer_factory_list:
+        for layer_symbol in layer_list:
             added_layer_names.append(layer_symbol.name)
             layer_symbol_dict = self._get_symbol_dict(layer_symbol)
 
@@ -144,18 +138,18 @@ class ModelHandler(object):
         self.update_sym(sym)
         logging.info('Added {} to model top'.format(', '.join(added_layer_names)))
 
-    def add_layer_bottom(self, layer_factory_list):
+    def add_layer_bottom(self, layer_list):
         """
         Add layer to input of model.
         This method requires the entire symbol to be recreated internally.
 
-        :param layer_factory: List of LayerFactory objects to be added to model input.
-        :type layer_factory: list(:class:`LayerFactory`)
+        :param layer_list: List of MxNet symbol layers to be added to model input.
+        :type layer_list: list(:class:`mx.symbol`)
         """
         added_layer_names = []
         net_symbol_dict = self._get_symbol_dict(self.symbol)
 
-        for layer_symbol in reversed(layer_factory_list):
+        for layer_symbol in reversed(layer_list):
             added_layer_names.append(layer_symbol.name)
             layer_symbol_dict = json.loads(layer_symbol.tojson())
 
