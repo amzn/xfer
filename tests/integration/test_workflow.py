@@ -139,11 +139,11 @@ class GpWorkflowTestCase(WorkflowTestCase):
 class BnnWorkflowTestCase(WorkflowTestCase):
     def setUp(self):
         super().setUp()
-        self.min_expected_accuracy = 0.55
+        self.min_expected_accuracy = 0.59
 
     def get_repurposer(self, source_model):
         return xfer.BnnRepurposer(source_model, self.meta_model_feature_layer_name, num_samples_mc_prediction=10,
-                                  num_epochs=150, num_samples_mc=4)
+                                  num_epochs=200, num_samples_mc=5)
 
     def assert_accuracy(self, accuracy):
         self.assertTrue(accuracy >= self.min_expected_accuracy,
@@ -153,12 +153,12 @@ class BnnWorkflowTestCase(WorkflowTestCase):
 class NnftWorkflowTestCase(WorkflowTestCase):
     def setUp(self):
         super().setUp()
-        self.min_accuracy = 0.49
+        self.min_accuracy = 0.61
         self.prev_accuracy = None
 
     def get_repurposer(self, source_model):
         return xfer.NeuralNetworkFineTuneRepurposer(source_model, transfer_layer_name='flatten', target_class_count=5,
-                                                    num_epochs=3)
+                                                    num_epochs=5)
 
     def assert_accuracy(self, accuracy):
         assert accuracy >= self.min_accuracy, 'accuracy: {}, min expected: {}'.format(accuracy, self.min_accuracy)
@@ -171,7 +171,7 @@ class NnftWorkflowTestCase(WorkflowTestCase):
 class NnrfWorkflowTestCase(WorkflowTestCase):
     def setUp(self):
         super().setUp()
-        self.min_accuracy = 0.46
+        self.min_accuracy = 0.58
         self.prev_accuracy = None
 
     def get_repurposer(self, source_model):
@@ -180,7 +180,7 @@ class NnrfWorkflowTestCase(WorkflowTestCase):
                         'fire5_squeeze1x1', 'fire5_expand1x1', 'fire5_expand3x3']
         random_layers = ['conv10']
         return xfer.NeuralNetworkRandomFreezeRepurposer(source_model, target_class_count=5, fixed_layers=fixed_layers,
-                                                        random_layers=random_layers, num_epochs=3)
+                                                        random_layers=random_layers, num_epochs=5)
 
     def assert_accuracy(self, accuracy):
         assert accuracy >= self.min_accuracy, 'accuracy: {}, min expected: {}'.format(accuracy, self.min_accuracy)
