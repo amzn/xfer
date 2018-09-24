@@ -90,6 +90,7 @@ class ModelHandler(object):
         for node in symbol_dict[consts.NODES]:
             for ip in node[consts.INPUTS]:
                 ip[0] -= delete_idx
+        print(symbol_dict)
         sym = mx.sym.load_json(json.dumps(symbol_dict))
 
         logging.info('{} deleted from model bottom'.format(', '.join(self.layer_names[:num_layers_to_drop])))
