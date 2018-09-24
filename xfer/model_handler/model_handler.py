@@ -66,6 +66,7 @@ class ModelHandler(object):
         """
         self._assert_drop_layer_valid(num_layers_to_drop)
         symbol_dict = self._get_symbol_dict(self.symbol)
+        print('original symbol dict', symbol_dict)
         # Determine number of nodes to delete by counting node ids which do not appear in arg_nodes
         count = 0
         for node_idx, _ in enumerate(symbol_dict[consts.NODES]):
@@ -76,11 +77,14 @@ class ModelHandler(object):
         delete_idx = node_idx  # We will delete nodes from 1 to delete_idx
         # Delete nodes from symbol dict
         for i in reversed(range(1, delete_idx+1)):
-            print(symbol_dict[consts.NODES][i])
+            print('node being deleted', symbol_dict[consts.NODES][i])
             del symbol_dict[consts.NODES][i]
         # Update arg_nodes (list of nodes that do not contain operators)
-        symbol_dict[consts.ARG_NODES] = [0] + [i-delete_idx if c >= delete_idx else i
+        print('arg nodes before', symbol_dict[consts.ARG_NODES])
+        print('delete_idx', delete_idx)
+        symbol_dict[consts.ARG_NODES] = [0] + [i-delete_idx
                                                for c, i in enumerate(symbol_dict[consts.ARG_NODES]) if i > delete_idx]
+        print('arg nodes after', symbol_dict[consts.ARG_NODES])
         # Updates heads - gives node idx of output
         for j in symbol_dict[consts.HEADS]:
             j[0] -= delete_idx
@@ -90,7 +94,7 @@ class ModelHandler(object):
         for node in symbol_dict[consts.NODES]:
             for ip in node[consts.INPUTS]:
                 ip[0] -= delete_idx
-        print(symbol_dict)
+        print('symbol_dict', symbol_dict)
         sym = mx.sym.load_json(json.dumps(symbol_dict))
 
         logging.info('{} deleted from model bottom'.format(', '.join(self.layer_names[:num_layers_to_drop])))
