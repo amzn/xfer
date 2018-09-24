@@ -14,12 +14,14 @@
 import mxnet as mx
 import numpy as np
 from unittest import TestCase
+import pytest
 from collections import OrderedDict
 
 from xfer import MetaModelRepurposer
 from ..repurposer_test_utils import RepurposerTestUtils
 
 
+@pytest.mark.integration
 class MetaModelRepurposerIntegrationTest(TestCase):
     """
     Test interaction of MetaModelRepurposer with ModelHandler
