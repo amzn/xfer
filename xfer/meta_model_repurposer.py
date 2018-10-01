@@ -122,7 +122,7 @@ class MetaModelRepurposer(Repurposer):
 
     def predict_probability(self, test_iterator: mx.io.DataIter):
         """
-        Predict class probabilities on test data using the target_model (i.e. repurposed meta-model).
+        Predict class probabilities on test data using the target_model (repurposed meta-model).
 
         :param test_iterator: Test data iterator to return predictions for.
         :type test_iterator: mxnet.io.DataIter
