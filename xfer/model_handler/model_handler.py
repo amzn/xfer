@@ -57,42 +57,189 @@ class ModelHandler(object):
         logging.info('{} deleted from model top'.format(', '.join(self.layer_names[last_layer_idx + 1:])))
         self.update_sym(sym)
 
-    def drop_layer_bottom(self, num_layers_to_drop=1):
+    def drop_layer_bottom(self, num_layers_to_drop=1, drop_layer_name=None):
         """
         Remove layers from input of model.
         This method requires the entire symbol to be recreated internally.
 
         :param int n: Number of layers to remove from model input.
         """
-        self._assert_drop_layer_valid(num_layers_to_drop)
         symbol_dict = self._get_symbol_dict(self.symbol)
-        # Determine number of nodes to delete by counting node ids which do not appear in arg_nodes
-        count = 0
-        for node_idx, _ in enumerate(symbol_dict[consts.NODES]):
-            if node_idx not in symbol_dict[consts.ARG_NODES]:
-                count += 1
-                if count >= num_layers_to_drop:
-                    break
-        delete_idx = node_idx  # We will delete nodes from 1 to delete_idx
-        # Delete nodes from symbol dict
-        for i in reversed(range(1, delete_idx+1)):
-            del symbol_dict[consts.NODES][i]
-        # Update arg_nodes (list of nodes that do not contain operators)
-        symbol_dict[consts.ARG_NODES] = [0] + [i-delete_idx
-                                               for c, i in enumerate(symbol_dict[consts.ARG_NODES]) if i > delete_idx]
-        # Updates heads - gives node idx of output
-        for j in symbol_dict[consts.HEADS]:
-            j[0] -= delete_idx
-        # Update node_row_ptr (list of ids of all nodes)
-        symbol_dict[consts.NODE_PTR] = symbol_dict[consts.NODE_PTR][:-delete_idx]
-        # Update inputs of nodes
-        for node in symbol_dict[consts.NODES]:
-            for ip in node[consts.INPUTS]:
-                ip[0] -= delete_idx
-        sym = mx.sym.load_json(json.dumps(symbol_dict))
 
+        # Validate the action
+        self._assert_drop_layer_valid(num_layers_to_drop)
+
+        layer_names_with_node_zero_as_input = self._get_layer_names_with_node_zero_as_input(symbol_dict[consts.NODES])
+        if len(layer_names_with_node_zero_as_input) > 1:
+            assert drop_layer_name is not None, 'Must specify layers to drop when ambiguous. Choose from: {}'.format(
+                ', '.join(layer_names_with_node_zero_as_input))
+            # raise exceptions.ModelError('Cannot perform drop_bottom_layer when there are two bottom layers')
+
+        # Get output layer names
+        output_layer_names = self._get_output_layer_names(symbol_dict['nodes'], symbol_dict['heads'])
+
+        # Get string input map
+        string_input_map = self._get_string_input_map(symbol_dict['nodes'])
+
+        if drop_layer_name is None:
+            drop_layer_name = self.layer_names[0]
+
+        # Find node index of operator being deleted
+        for del_node_op_idx, node in enumerate(symbol_dict['nodes']):
+            if node['name'] == drop_layer_name:
+                break
+
+        for node in symbol_dict['nodes']:
+            print(node)
+        print('deleting layer nodes')
+        symbol_dict = self._delete_layer_nodes_given_operator_node(symbol_dict, del_node_op_idx)
+        for node in symbol_dict['nodes']:
+            print(node)
+
+        # If more than one node had zero as input there may be a join layer than needs deleting
+        if len(layer_names_with_node_zero_as_input) > 1:
+            # Get list of indexes for nodes which have zero as an input
+            nodes_using_zero_ids = self._get_layer_ids_with_node_zero_as_input(symbol_dict['nodes'])
+
+            # Find joining node
+            join_idx = self._get_join_idx(nodes_using_zero_ids, symbol_dict[consts.NODES])
+            print('join index = {}'.format(join_idx))
+
+            # Delete input to join layer from deleted layer
+            symbol_dict['nodes'][join_idx]['inputs'].remove([del_node_op_idx, 0, 0])
+
+            # Determine number of inputs to join node
+            num_inputs = len(symbol_dict['nodes'][join_idx]['inputs'])
+
+            # Remove join layer if it has fewer than 2 inputs
+            if num_inputs < 2:
+                input_of_join = symbol_dict['nodes'][join_idx]['inputs'][0]
+                # Delete join nodes
+                symbol_dict = self._delete_layer_nodes_given_operator_node(symbol_dict, join_idx)
+                # Replace parent of join with former child of join
+                for i, node in enumerate(symbol_dict['nodes']):
+                    for j, input_list in enumerate(node['inputs']):
+                        if input_list[0] == join_idx:
+                            symbol_dict['nodes'][i]['inputs'][j] = input_of_join
+
+        print('after join deleted')
+        for node in symbol_dict['nodes']:
+            print(node)
+
+        symbol_dict['arg_nodes'] = self._get_arg_nodes(symbol_dict[consts.NODES])
+        symbol_dict['heads'] = self._get_heads(symbol_dict[consts.NODES], output_layer_names)
+        symbol_dict['node_row_ptr'] = self._get_node_row_ptr(symbol_dict[consts.NODES])
+        for node in symbol_dict['nodes']:
+            print(node)
+        symbol_dict['nodes'] = self._update_inputs(symbol_dict['nodes'], string_input_map, drop_layer_name,
+                                                   len(layer_names_with_node_zero_as_input))
+        for node in symbol_dict['nodes']:
+            print(node)
+
+        sym = mx.sym.load_json(json.dumps(symbol_dict))
         logging.info('{} deleted from model bottom'.format(', '.join(self.layer_names[:num_layers_to_drop])))
         self.update_sym(sym)
+
+    @staticmethod
+    def _delete_layer_nodes_given_operator_node(symbol_dict, node_idx):
+        # Find first node for this layer
+        print('node_idx', node_idx)
+        for first_idx in reversed(range(node_idx + 1)):  # +1 because range(a,b) doesn't include b
+            # -1 because the first index is the index before the first that doesn't appear in arg nodes
+            # Do not want to delete input (node 0)
+            if (first_idx - 1) not in symbol_dict['arg_nodes'] or (first_idx - 1) == 0:
+                break
+        print('first_idx', first_idx)
+        for i in reversed(range(first_idx, node_idx+1)):  # Add 1 because range(a,b) doesn't include b
+            del symbol_dict[consts.NODES][i]
+        return symbol_dict
+
+    # Can we generate everything that isn't node from nodes?
+    @staticmethod
+    def _get_arg_nodes(nodes):
+        print('generating arg_nodes')
+        arg_nodes = []
+        for idx, node in enumerate(nodes):
+            if node['op'] == 'null':
+                arg_nodes.append(idx)
+        return arg_nodes
+
+    @staticmethod
+    def _get_heads(nodes, output_layer_names):
+        print('generating heads')
+        heads = []
+        for idx, node in enumerate(nodes):
+            if node['name'] in output_layer_names:
+                heads.append([idx, 0, 0])
+        return heads
+
+    @staticmethod
+    def _get_node_row_ptr(nodes):
+        print('generating node row ptr')
+        node_row_ptr = list(range(0, len(nodes)+1))
+        return node_row_ptr
+
+    @staticmethod
+    def _get_string_input_map(nodes):
+        input_map = {}
+        for node in nodes:
+            input_map[node['name']] = []
+            for i in node['inputs']:
+                input_map[node['name']].append(nodes[i[0]]['name'])
+        return input_map
+
+    def _update_inputs(self, nodes, string_input_map, drop_layer_name, num_nodes_with_zero_as_input):
+        print('updating inputs')
+        # If more than one node has zero as input then we don't want to transfer the input of the dropped layer
+        if num_nodes_with_zero_as_input > 1:
+            nodes_not_use_input = [drop_layer_name]
+        else:
+            nodes_not_use_input = []
+        print('nodes_not_use_input', nodes_not_use_input)
+        # Generate name to idx mapping
+        name2idx = {}
+        for idx, node in enumerate(nodes):
+            name2idx[node['name']] = idx
+        print('name2idx', name2idx)
+
+        for node_id, node in enumerate(nodes):
+            if len(node['inputs']) == 0:
+                continue
+            print(node)
+            temp_inputs = string_input_map[node['name']]
+            set_temp_inputs = set(temp_inputs)
+            available_layers = list(name2idx.keys())
+
+            while not set_temp_inputs.issubset(available_layers):
+                print('not all of temp inputs exist, {}'.format(temp_inputs))
+                for i, temp_input in enumerate(temp_inputs):
+                    if temp_input not in list(name2idx.keys()):
+                        print('{} does not exist'.format(temp_input))
+                        print(temp_inputs)
+                        temp_inputs.remove(temp_input)
+                        if temp_input in nodes_not_use_input:
+                            continue
+                        for temp_input_name in reversed(string_input_map[temp_input]):
+                            temp_inputs.insert(i, temp_input_name)
+
+                print(temp_inputs)
+                set_temp_inputs = set(temp_inputs)
+
+            temp_inputs = [name2idx[name] for name in temp_inputs]
+
+            nodes[node_id]['inputs'] = [[temp_input, 0, 0] for temp_input in temp_inputs]
+
+        return nodes
+
+    @staticmethod
+    def _get_output_layer_names(nodes, heads):
+        output_nodes = [i[0] for i in heads]
+        output_layer_names = []
+        for c, node in enumerate(nodes):
+            if c in output_nodes:
+                output_layer_names.append(node['name'])
+        return output_layer_names
+
 
     def add_layer_top(self, layer_list):
         """
@@ -181,6 +328,53 @@ class ModelHandler(object):
 
         self.update_sym(sym)
         logging.info('Added {} to model bottom'.format(', '.join(added_layer_names)))
+
+    @staticmethod
+    def _get_layer_names_with_node_zero_as_input(nodes):
+        layer_names = []
+        for node in nodes:
+            for input in node['inputs']:
+                if input[0] == 0:
+                    layer_names.append(node[consts.NAME])
+                    # Avoid counting twice in the case where a node has two inputs from 0 node
+                    break
+        return layer_names
+
+    @staticmethod
+    def _get_layer_ids_with_node_zero_as_input(nodes):
+        layer_ids = []
+        for idx, node in enumerate(nodes):
+            for input in node['inputs']:
+                if input[0] == 0:
+                    layer_ids.append(idx)
+                    # Avoid counting twice in the case where a node has two inputs from 0 node
+                    break
+        return layer_ids
+
+    @staticmethod
+    def _get_join_idx(nodes_using_zero_ids, nodes):
+        """Doesn't really work outside the most simple case"""
+        # Create dictionary with key for each node using zero input
+        parents = {}
+        for n in nodes_using_zero_ids:
+            parents[n] = []
+        # Loop until join node found
+        found = False
+        while not found:
+            # Loop through nodes
+            for idx, node in enumerate(nodes):
+                for i in node['inputs']:
+                    if i[0] in nodes_using_zero_ids:
+                        parents[i[0]].append(idx)
+            # print(parents)
+            value_list = list(parents.values())
+            # print(value_list)
+            intersection = set(value_list[0]).intersection(*value_list)
+            # print('intersection', intersection)
+            if len(intersection) > 0:
+                break
+        # print('intersection found'.format(list(intersection)))
+        return list(intersection)[0]
 
     def get_module(self, iterator, fixed_layer_parameters=None, random_layer_parameters=None):
         """
