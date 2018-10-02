@@ -97,7 +97,7 @@ class ModelHandler(object):
             string_input_map = self._get_string_input_map(symbol_dict[consts.NODES])
 
             if drop_layer_name is None:
-                drop_layer_name = self.layer_names[0]
+                drop_layer_name = self._get_name_of_first_node(symbol_dict[consts.NODES])
 
             logging.info('Dropping {}'.format(drop_layer_name))
             print('Dropping {}'.format(drop_layer_name))
@@ -156,15 +156,16 @@ class ModelHandler(object):
 
         logging.info('{} deleted from model bottom'.format(', '.join(layers_dropped)))
         print('{} deleted from model bottom'.format(', '.join(layers_dropped)))
-        if len(drop_layer_names) > 0:
-            logging.warning('Did not use all of drop_layer_names: {}'.format(', '.join(drop_layer_names)))
-            print('Did not use all of drop_layer_names: {}'.format(', '.join(drop_layer_names)))
+        if drop_layer_names is not None:
+            if len(drop_layer_names) > 0:
+                logging.warning('Did not use all of drop_layer_names: {}'.format(', '.join(drop_layer_names)))
+                print('Did not use all of drop_layer_names: {}'.format(', '.join(drop_layer_names)))
         self.update_sym(sym)
 
     @staticmethod
     def _get_name_of_first_node(nodes):
         for node in nodes:
-            if node[consts.OP] != consts.NO_OP:
+            if node[consts.OPERATION] != consts.NO_OP:
                 return node['name']
 
     @staticmethod
