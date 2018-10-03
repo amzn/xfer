@@ -33,6 +33,10 @@ class BnnRepurposerTestCase(MetaModelRepurposerTestCase):
 
         super(BnnRepurposerTestCase, self).setUp()
 
+        N = 10
+        self.train_features = self.train_features[:N]
+        self.train_labels = self.train_labels[:N]
+
         # Override base repurpose_class with 'BnnRepurposer' to run base tests with instance of BNN Repurposer
         self.repurposer_class = BnnRepurposer
 
@@ -40,7 +44,7 @@ class BnnRepurposerTestCase(MetaModelRepurposerTestCase):
         self.minimum_expected_accuracy = 0.2
 
     def test_train_model_from_features(self):
-        bnn_repurposer = BnnRepurposer(self.source_model, self.source_model_layers, num_epochs=10)
+        bnn_repurposer = BnnRepurposer(self.source_model, self.source_model_layers, num_epochs=3)
         bnn_model = bnn_repurposer._train_model_from_features(self.train_features, self.train_labels)
         self._validate_trained_model(bnn_model)
 
@@ -58,7 +62,7 @@ class BnnRepurposerTestCase(MetaModelRepurposerTestCase):
         """ Used to test 'predict_from_features' implementation in derived classes """
         # Create repurposer
         repurposer = self.repurposer_class(self.source_model, self.source_model_layers, num_samples_mc_prediction=5,
-                                           num_epochs=5)
+                                           num_epochs=2, num_samples_mc=1)
 
         repurposer.target_model = repurposer._train_model_from_features(self.train_features, self.train_labels)
 
@@ -90,7 +94,7 @@ class BnnRepurposerTestCase(MetaModelRepurposerTestCase):
 
         # Create repurposer
         repurposer = self.repurposer_class(self.source_model, self.source_model_layers, num_samples_mc_prediction=5,
-                                           num_epochs=5)
+                                           num_epochs=2)
 
         # Identify which predict function to test
         if test_predict_probability:
@@ -132,12 +136,14 @@ class BnnRepurposerTestCase(MetaModelRepurposerTestCase):
     def test_repurpose(self, mock_model_handler):
         # Patch model_handler and then create bnn_repurposer
         mock_model_handler.return_value = RepurposerTestUtils.get_mock_model_handler_object()
-        mock_model_handler.return_value.get_layer_output.return_value = self.train_feature_dict, self.train_labels
+        N = 5
+        train_feature_dict_subset = {k: v[:N] for k, v in self.train_feature_dict.items()}
+        mock_model_handler.return_value.get_layer_output.return_value = train_feature_dict_subset, self.train_labels[:N]
         self._test_repurpose(n_jobs=-1)  # Use all cores
         self._test_repurpose(n_jobs=1)  # Use single core
 
     def _test_repurpose(self, n_jobs=-1):
-        bnn_repurposer = BnnRepurposer(self.source_model, self.source_model_layers, num_epochs=5)
+        bnn_repurposer = BnnRepurposer(self.source_model, self.source_model_layers, num_epochs=2)
 
         # Target model is not initialized yet
         self.assertTrue(bnn_repurposer.target_model is None, "Target model not expected to be initialized at this \
@@ -253,13 +259,16 @@ class BnnRepurposerTestCase(MetaModelRepurposerTestCase):
         assert params == expected_params
 
     def test_verbose(self):
-        bnn_repurposer = BnnRepurposer(self.source_model, self.source_model_layers, num_epochs=3, verbose=True)
+        bnn_repurposer = BnnRepurposer(self.source_model, self.source_model_layers, num_epochs=3, verbose=True,
+                                       num_samples_mc=1)
+        N = 2
         with self.assertLogs() as cm:
-            bnn_repurposer._train_model_from_features(self.train_features, self.train_labels)
+            bnn_repurposer._train_model_from_features(self.train_features[:N], self.train_labels[:N])
         print(cm.output)
         assert len(cm.output) == 3
 
-        bnn_repurposer = BnnRepurposer(self.source_model, self.source_model_layers, num_epochs=3, verbose=False)
+        bnn_repurposer = BnnRepurposer(self.source_model, self.source_model_layers, num_epochs=3, verbose=False,
+                                       num_samples_mc=1)
         with self.assertRaises(AssertionError):
             with self.assertLogs():
-                bnn_repurposer._train_model_from_features(self.train_features, self.train_labels)
+                bnn_repurposer._train_model_from_features(self.train_features[:N], self.train_labels[:N])

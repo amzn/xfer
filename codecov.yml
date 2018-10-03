@@ -1,5 +1,5 @@
 codecov:
-branch: master
+branch: develop
 
 coverage:
   precision: 2

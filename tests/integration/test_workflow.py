@@ -13,6 +13,7 @@
 # ==============================================================================
 from unittest import TestCase
 from abc import ABCMeta, abstractmethod
+import pytest
 
 import mxnet as mx
 import random
@@ -22,6 +23,7 @@ import xfer
 from ..repurposer_test_utils import RepurposerTestUtils
 
 
+@pytest.mark.integration
 class WorkflowTestCase(TestCase):
     __metaclass__ = ABCMeta
 
@@ -153,15 +155,15 @@ class BnnWorkflowTestCase(WorkflowTestCase):
 class NnftWorkflowTestCase(WorkflowTestCase):
     def setUp(self):
         super().setUp()
-        self.min_accuracy = 0.65
+        self.min_accuracy = 0.61
         self.prev_accuracy = None
 
     def get_repurposer(self, source_model):
         return xfer.NeuralNetworkFineTuneRepurposer(source_model, transfer_layer_name='flatten', target_class_count=5,
-                                                    num_epochs=6)
+                                                    num_epochs=5)
 
     def assert_accuracy(self, accuracy):
-        assert accuracy > self.min_accuracy, 'accuracy: {}, min expected: {}'.format(accuracy, self.min_accuracy)
+        assert accuracy >= self.min_accuracy, 'accuracy: {}, min expected: {}'.format(accuracy, self.min_accuracy)
         if self.prev_accuracy is None:
             self.prev_accuracy = accuracy
         else:
@@ -180,10 +182,10 @@ class NnrfWorkflowTestCase(WorkflowTestCase):
                         'fire5_squeeze1x1', 'fire5_expand1x1', 'fire5_expand3x3']
         random_layers = ['conv10']
         return xfer.NeuralNetworkRandomFreezeRepurposer(source_model, target_class_count=5, fixed_layers=fixed_layers,
-                                                        random_layers=random_layers, num_epochs=6)
+                                                        random_layers=random_layers, num_epochs=5)
 
     def assert_accuracy(self, accuracy):
-        assert accuracy > self.min_accuracy, 'accuracy: {}, min expected: {}'.format(accuracy, self.min_accuracy)
+        assert accuracy >= self.min_accuracy, 'accuracy: {}, min expected: {}'.format(accuracy, self.min_accuracy)
         if self.prev_accuracy is None:
             self.prev_accuracy = accuracy
         else:

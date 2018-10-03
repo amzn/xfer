@@ -146,7 +146,7 @@ class GpRepurposerTestCase(MetaModelRepurposerTestCase):
 
     def _test_gp_serialisation(self, sparse_gp, multiple_kernels):
         gp_repurposer = GpRepurposer(self.source_model, self.source_model_layers, apply_l2_norm=True)
-        num_inducing = 5
+        num_inducing = 2
         gp_repurposer.NUM_INDUCING_SPARSE_GP = num_inducing
 
         if not sparse_gp:  # Select a small data set to apply normal GP classification
@@ -190,7 +190,8 @@ class GpRepurposerTestCase(MetaModelRepurposerTestCase):
         # Validate if accuracy is above expected threshold
         predicted_labels = np.argmax(predictions_after, axis=1)
         accuracy = np.mean(predicted_labels == self.test_labels[:self.num_data_points_to_predict])
-        self.assertTrue(accuracy >= 0.5, "Accuracy {} less than 0.5".format(accuracy))
+        expected_accuracy = 0.3
+        self.assertTrue(accuracy >= expected_accuracy, "Accuracy {} less than {}".format(accuracy, expected_accuracy))
 
     def _save_and_load_repurposer(self, gp_repurposer):
         file_path = 'test_serialisation'
