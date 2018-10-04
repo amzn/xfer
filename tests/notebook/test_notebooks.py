@@ -65,6 +65,7 @@ def _test_ipynb(notebook):
     # Assert no errors were collected from notebook
     assert errors == [], 'Errors found in {}\n{}'.format(notebook, errors)
 
+
 @pytest.mark.notebook
 @pytest.mark.parametrize("notebook", demo_notebooks)
 def test_ipynb(notebook):
