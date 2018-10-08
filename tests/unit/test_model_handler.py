@@ -22,6 +22,8 @@ from collections import OrderedDict
 from xfer import model_handler
 from xfer.model_handler import consts, exceptions
 
+from ..repurposer_test_utils import RepurposerTestUtils
+
 
 class TestModelHandler(TestCase):
     def setUp(self):
@@ -40,6 +42,18 @@ class TestModelHandler(TestCase):
 
     def tearDown(self):
         del self.mh
+
+    # def test_resnet(self):
+    #     RepurposerTestUtils.download_resnet()
+    #     mod = mx.mod.Module.load('resnet-101', 0)
+    #     mh = model_handler.ModelHandler(mod)
+    #     print(mh.layer_names)
+    # 
+    #     mh.drop_layer_top()
+    # 
+    #     mh.drop_layer_bottom()
+    # 
+    #     raise ValueError
 
     def test_constructor_binded_module(self):
         # Assert module that is binded can be used to init a ModelHandler object and can add/drop layers
@@ -91,6 +105,49 @@ class TestModelHandler(TestCase):
         with self.assertRaises(model_handler.exceptions.ModelError):
             self.mh.drop_layer_top(8)
 
+    def test_drop_layer_top_two_outputs(self):
+        # Build a symbol with two softmax output layers
+        data = mx.symbol.Variable('data')
+        fc1 = mx.symbol.FullyConnected(data=data, name='fc1', num_hidden=128)
+        act1 = mx.symbol.Activation(data=fc1, name='relu1', act_type="relu")
+        fc2 = mx.symbol.FullyConnected(data=act1, name='fc2', num_hidden=64)
+        act2 = mx.symbol.Activation(data=fc2, name='relu2', act_type="relu")
+        fc3 = mx.symbol.FullyConnected(data=act2, name='fc3', num_hidden=10)
+
+        fc4 = mx.sym.FullyConnected(data=fc3, name='fc4_1', num_hidden=10)
+        sm1 = mx.symbol.SoftmaxOutput(data=fc4, name='softmax1')
+        fc5 = mx.sym.FullyConnected(data=fc3, name='fc4_2', num_hidden=10)
+        sm2 = mx.symbol.SoftmaxOutput(data=fc5, name='softmax2')
+
+        softmax = mx.symbol.Group([sm1, sm2])
+
+        mod = mx.mod.Module(softmax, label_names=['softmax1_label', 'softmax2_label'])
+        mh = model_handler.ModelHandler(mod)
+
+        with self.assertRaises(exceptions.ModelError):
+            mh.drop_layer_top()
+            
+    def test_drop_layer_top_split_1(self):
+        mh, plus_layer_name = self._build_split_net()
+        assert mh.layer_names == ['flatten0', 'a_1', 'a_2', 'a_3', 'b_1', 'b_2', plus_layer_name, 'softmax']
+        
+        with self.assertLogs() as cm:
+            mh.drop_layer_top()
+        print(cm.output)
+        assert cm.output == ['INFO:root:softmax deleted from model top']
+        
+        assert mh.layer_names == ['flatten0', 'a_1', 'a_2', 'a_3', 'b_1', 'b_2', plus_layer_name]
+
+        with self.assertRaises(exceptions.ModelError):
+            mh.drop_layer_top()
+            
+        with self.assertLogs() as cm:
+            mh.drop_layer_top(branch_to_keep=['a_3'])
+        print(cm.output)
+        assert cm.output == ['INFO:root:{} deleted from model top'.format(plus_layer_name)]
+        
+        assert mh.layer_names == ['flatten0', 'a_1', 'a_2', 'a_3']
+
     def test_drop_layer_bottom_1(self):
         assert 'conv1' in list(self.mh.layer_type_dict.keys())
 
@@ -112,6 +169,8 @@ class TestModelHandler(TestCase):
 
         for layer_name in ['conv1', 'act1', 'conv2']:
             assert layer_name not in list(self.mh.layer_type_dict.keys())
+        print(outputs_pre)
+        print(outputs_post)
         assert set(outputs_pre).symmetric_difference(set(outputs_post)) == {'conv1_bias', 'conv1_weight',
                                                                             'conv1_output', 'act1_output',
                                                                             'conv2_bias',  'conv2_output',
@@ -120,6 +179,142 @@ class TestModelHandler(TestCase):
     def test_drop_layer_bottom_too_many(self):
         with self.assertRaises(model_handler.exceptions.ModelError):
             self.mh.drop_layer_bottom(8)
+
+    @staticmethod
+    def _build_split_net():
+        """Instantiate MH for a model that diverges into two and then joins back into one."""
+        data = mx.sym.var('data')
+        data = mx.sym.flatten(data=data, name='flatten0')
+        fc1 = mx.sym.FullyConnected(data, num_hidden=5, name='a_1')
+        fc2 = mx.sym.FullyConnected(fc1, num_hidden=5, name='a_2')
+        fc3 = mx.sym.FullyConnected(fc2, num_hidden=5, name='a_3')
+        fc2 = mx.sym.FullyConnected(data, num_hidden=5, name='b_1')
+        fc2b = mx.sym.FullyConnected(fc2, num_hidden=5, name='b_2')
+        plus = fc3.__add__(fc2b)
+
+        softmax = mx.sym.SoftmaxOutput(plus, name='softmax')
+        mod = mx.mod.Module(softmax)
+        mh = model_handler.ModelHandler(mod)
+
+        plus_layer_name = mh.layer_names[6]
+
+        return mh, plus_layer_name
+
+    def test_drop_layer_bottom_1_at_a_time_split(self):
+        mh, plus_layer_name = self._build_split_net()
+        assert mh.layer_names == ['flatten0', 'a_1', 'a_2', 'a_3', 'b_1', 'b_2', plus_layer_name, 'softmax']
+
+        with self.assertLogs() as cm:
+            mh.drop_layer_bottom()
+        assert cm.output == ['INFO:root:Dropping flatten0',
+                             'INFO:root:flatten0 deleted from model bottom']
+
+        with self.assertRaises(exceptions.ModelError):
+            mh.drop_layer_bottom()
+
+        assert mh.layer_names == ['a_1', 'a_2', 'a_3', 'b_1', 'b_2', plus_layer_name, 'softmax']
+
+        with self.assertRaises(exceptions.ModelError):
+            mh.drop_layer_bottom()
+
+        with self.assertLogs() as cm:
+            mh.drop_layer_bottom(drop_layer_names=['a_1'])
+        assert cm.output == ['INFO:root:Dropping a_1',
+                             'INFO:root:a_1 deleted from model bottom']
+
+        assert mh.layer_names == ['a_2', 'a_3', 'b_1', 'b_2', plus_layer_name, 'softmax']
+
+        with self.assertLogs() as cm:
+            mh.drop_layer_bottom(drop_layer_names=['b_1'])
+        assert cm.output == ['INFO:root:Dropping b_1',
+                             'INFO:root:b_1 deleted from model bottom']
+
+        assert mh.layer_names == ['a_2', 'a_3', 'b_2', plus_layer_name, 'softmax']
+
+        with self.assertRaises(exceptions.ModelError):
+            mh.drop_layer_bottom()
+
+        with self.assertLogs() as cm:
+            mh.drop_layer_bottom(drop_layer_names=['b_2'])
+        assert cm.output == ['INFO:root:Dropping b_2',
+                             'INFO:root:Dropping {} (join node auto-deleted)'.format(plus_layer_name),
+                             'INFO:root:b_2, {} deleted from model bottom'.format(plus_layer_name)]
+
+        assert mh.layer_names == ['a_2', 'a_3', 'softmax']
+
+        with self.assertLogs() as cm:
+            mh.drop_layer_bottom(drop_layer_names=['b_2'])
+        assert cm.output == ['INFO:root:Dropping a_2',
+                             'INFO:root:a_2 deleted from model bottom',
+                             'WARNING:root:Did not use all of drop_layer_names: b_2']
+
+        assert mh.layer_names == ['a_3', 'softmax']
+
+        with self.assertLogs() as cm:
+            mh.drop_layer_bottom()
+        assert cm.output == ['INFO:root:Dropping a_3',
+                             'INFO:root:a_3 deleted from model bottom']
+
+        assert mh.layer_names == ['softmax']
+
+        with self.assertRaises(exceptions.ModelError):
+            mh.drop_layer_bottom()
+
+    def test_drop_layer_bottom_2_at_a_time_split(self):
+        mh, plus_layer_name = self._build_split_net()
+        assert mh.layer_names == ['flatten0', 'a_1', 'a_2', 'a_3', 'b_1', 'b_2', plus_layer_name, 'softmax']
+
+        with self.assertLogs() as cm:
+            mh.drop_layer_bottom(num_layers_to_drop=2, drop_layer_names=['b_1'])
+        assert cm.output == ['INFO:root:Dropping flatten0',
+                             'INFO:root:Dropping b_1',
+                             'INFO:root:flatten0, b_1 deleted from model bottom']
+
+        with self.assertRaises(exceptions.ModelError):
+                mh.drop_layer_bottom(num_layers_to_drop=2)
+
+        assert mh.layer_names == ['a_1', 'a_2', 'a_3', 'b_2', plus_layer_name, 'softmax']
+
+        with self.assertLogs() as cm:
+            mh.drop_layer_bottom(num_layers_to_drop=2, drop_layer_names=['a_1', 'b_2'])
+        assert cm.output == ['INFO:root:Dropping a_1',
+                             'INFO:root:Dropping b_2',
+                             'INFO:root:Dropping {} (join node auto-deleted)'.format(plus_layer_name),
+                             'INFO:root:a_1, b_2, {} deleted from model bottom'.format(plus_layer_name)]
+
+        assert mh.layer_names == ['a_2', 'a_3', 'softmax']
+
+        with self.assertLogs() as cm:
+            mh.drop_layer_bottom(num_layers_to_drop=2, drop_layer_names=['a_1', 'b_2'])
+        assert cm.output == ['INFO:root:Dropping a_2',
+                             'INFO:root:Dropping a_3',
+                             'INFO:root:a_2, a_3 deleted from model bottom',
+                             'WARNING:root:Did not use all of drop_layer_names: a_1, b_2']
+
+        assert mh.layer_names == ['softmax']
+
+    def test_drop_layer_bottom_3_at_a_time_split(self):
+        mh, plus_layer_name = self._build_split_net()
+        assert mh.layer_names == ['flatten0', 'a_1', 'a_2', 'a_3', 'b_1', 'b_2', plus_layer_name, 'softmax']
+
+        with self.assertLogs() as cm:
+            mh.drop_layer_bottom(num_layers_to_drop=3, drop_layer_names=['b_1', 'b_2'])
+        assert cm.output == ['INFO:root:Dropping flatten0',
+                             'INFO:root:Dropping b_1',
+                             'INFO:root:Dropping b_2',
+                             'INFO:root:Dropping {} (join node auto-deleted)'.format(plus_layer_name),
+                             'INFO:root:flatten0, b_1, b_2, {} deleted from model bottom'.format(plus_layer_name)]
+
+        assert mh.layer_names == ['a_1', 'a_2', 'a_3', 'softmax']
+
+        with self.assertLogs() as cm:
+            mh.drop_layer_bottom(num_layers_to_drop=3)
+        assert cm.output == ['INFO:root:Dropping a_1',
+                             'INFO:root:Dropping a_2',
+                             'INFO:root:Dropping a_3',
+                             'INFO:root:a_1, a_2, a_3 deleted from model bottom']
+
+        assert mh.layer_names == ['softmax']
 
     def test_add_layer_top(self):
         # Drop output layer so that layers can be added to top
