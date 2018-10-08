@@ -26,7 +26,7 @@ If you're wishing for a feature that doesn't exist yet in Xfer, there are probab
 
 If you're thinking about adding code to Xfer, here are some guidelines to get you started.
 
-* If the change is a major feature, create an issue using the [feature request template](https://github.com/amzn/xfer/issues/new?template=feature_request.md) and get community feedback on the proposed changes.
+* If the change is a major feature, create an issue using the [feature request template](https://github.com/amzn/xfer/issues/new?template=feature_request.md) to get community feedback on the proposed changes and document the design reasoning of Xfer for future reference.
 
 * Keep pull requests small, preferably one feature per pull request. This lowers the bar to entry for a reviewer, and keeps feedback focused for each feature.
 
