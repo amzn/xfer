@@ -73,7 +73,7 @@ Before submitting the pull request, please go through this checklist to make the
 * Do all public functions have docstrings including examples? If you added a new module, did you add it to the Sphinx ```api.rst``` file in the ```doc``` folder?
 * Is the code style correct (PEP8)? You can verify this by running `flake8` from the top level directory.
 * Is the commit message formatted correctly?
-* If this is a large addition, is there a tutorial or more extensive module-level description? Did you discuss the addition in a [feature request](https://github.com/amzn/xfer/issues/new?template=feature_request.md) and provide a link a to it?
+* If this is a large addition, is there a tutorial or more extensive module-level description? Did you discuss the addition in a [feature request](https://github.com/amzn/xfer/issues/new?template=feature_request.md) and provide a link to it?
 ## Setting up a development environment
 
 ### Building the code
