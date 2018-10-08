@@ -80,8 +80,8 @@ class NeuralNetworkRepurposer(Repurposer):
 
     def repurpose(self, train_iterator: mx.io.DataIter):
         """
-        Train a neural network by transferring layers/weights from source_model
-        Set self.target_model to the repurposed neural network
+        Train a neural network by transferring layers/weights from source_model.
+        Set self.target_model to the repurposed neural network.
 
         :param train_iterator: Training data iterator to use to extract features from source_model
         :type train_iterator: :class:`mxnet.io.DataIter`
@@ -173,7 +173,7 @@ class NeuralNetworkRepurposer(Repurposer):
 
     def serialize(self, file_prefix):
         """
-        Serialize repurposer to dictionary
+        Serialize repurposer to dictionary.
 
         :return: Dictionary describing repurposer
         :rtype: dict
@@ -190,7 +190,7 @@ class NeuralNetworkRepurposer(Repurposer):
 
     def deserialize(self, input_dict):
         """
-        Uses dictionary to set attributes of repurposer
+        Uses dictionary to set attributes of repurposer.
 
         :param dict input_dict: Dictionary containing values for attributes to be set to
         """
