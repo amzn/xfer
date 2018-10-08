@@ -44,19 +44,94 @@ class ModelHandler(object):
         self.devices = self._get_devices(context_function, num_devices)
         self.data_name = data_name
 
-    def drop_layer_top(self, num_layers_to_drop=1):
+    def drop_layer_top(self, num_layers_to_drop=1, branch_to_keep=None):
         """
         Remove layers from output of model.
 
         :param int n: Number of layers to remove from model output.
         """
+        sym = self.symbol
+
         self._assert_drop_layer_valid(num_layers_to_drop)
-        # Get index of new last layer
-        last_layer_idx = -(num_layers_to_drop+1)
-        # Symbol ending at new last layer
-        sym = self.symbol.get_internals()[self.layer_names[last_layer_idx] + '_output']
-        logging.info('{} deleted from model top'.format(', '.join(self.layer_names[last_layer_idx + 1:])))
+
+        if branch_to_keep is not None:
+            assert type(branch_to_keep) == list
+
+        layers_dropped = []
+
+        for n in range(num_layers_to_drop):
+            symbol_dict = self._get_symbol_dict(sym)
+
+            drop_layer_name = symbol_dict[consts.NODES][-1][consts.NAME]
+            if self._drop_top_layer_ambiguous(symbol_dict)[0]:
+                try:
+                    new_last_layer = branch_to_keep.pop(0)
+                except AttributeError:
+                    raise exceptions.ModelError(self._ambiguous_layer_drop_error_message(
+                                                self._drop_top_layer_ambiguous(symbol_dict)[1]))
+            else:
+                # Get name of layer before drop_layer_name
+                next_operation = False
+                for node in reversed(symbol_dict[consts.NODES]):
+                    if next_operation:
+                        if node[consts.OPERATION] != consts.NO_OP:
+                            new_last_layer = node[consts.NAME]
+                            break
+                    if node[consts.NAME] == drop_layer_name:
+                        next_operation = True
+
+            layers_dropped.append(drop_layer_name)
+            sym = sym.get_internals()[new_last_layer + consts.OUTPUT]
+
+        logging.info('{} deleted from model top'.format(', '.join(layers_dropped)))
+        print('{} deleted from model top'.format(', '.join(layers_dropped)))
         self.update_sym(sym)
+
+    def _drop_top_layer_ambiguous(self, symbol_dict):
+        # for node in symbol_dict[consts.NODES]:
+            # print(node)
+        ambiguous_layer_names = []
+        # Ambiguous if there are two heads or node has two outputs
+        if len(symbol_dict[consts.HEADS]) > 1:
+            # print('many heads')
+            # print(symbol_dict[consts.HEADS])
+            for head in symbol_dict[consts.HEADS]:
+                ambiguous_layer_names.append(symbol_dict[consts.NODES][head[0]][consts.NAME])
+            raise exceptions.ModelError(
+                'ModelHandler does not support drop_layer_top models with more than one output. ({})'.format(
+                    ', '.join(ambiguous_layer_names)))
+
+        last_layer_name = self.layer_names[-1]
+        for last_layer_idx, node in enumerate(symbol_dict[consts.NODES]):
+            if node[consts.NAME] == last_layer_name:
+                break
+
+        # Get list of inputs to last layer
+        last_layer_inputs = []
+        for i in symbol_dict[consts.NODES][last_layer_idx][consts.INPUTS]:
+            last_layer_inputs.append(i[0])
+        # print('last_layer_inputs', last_layer_inputs)
+
+        # Remove any nodes that have empty input from last_layer_inputs list
+        filtered_last_layer_inputs = []
+        for i in last_layer_inputs:
+            # print(i, symbol_dict[consts.NODES][i][consts.NAME])
+            if symbol_dict[consts.NODES][i][consts.INPUTS] != []:
+                filtered_last_layer_inputs.append(i)
+        # print('filtered_last_layer_inputs', filtered_last_layer_inputs)
+
+        if len(filtered_last_layer_inputs) > 1:
+            for idx, node in enumerate(symbol_dict[consts.NODES]):
+                if idx in last_layer_inputs:
+                    ambiguous_layer_names.append(node[consts.NAME])
+            # print('last layer has too many inputs')
+            return True, ambiguous_layer_names
+
+        return False, None
+
+    @staticmethod
+    def _ambiguous_layer_drop_error_message(layer_names):
+        return 'Found an ambiguous case. Please choose from: {}'.format(', '.join(layer_names))
 
     def drop_layer_bottom(self, num_layers_to_drop=1, drop_layer_names=None):
         """
@@ -83,8 +158,11 @@ class ModelHandler(object):
                 try:
                     drop_layer_name = drop_layer_names.pop(0)
                 except IndexError:
-                    raise exceptions.ModelError('Found an ambiguous case. Please choose from: {}'.format(
-                        ', '.join(layer_names_with_node_zero_as_input)))
+                    raise exceptions.ModelError(self._ambiguous_layer_drop_error_message(
+                                                layer_names_with_node_zero_as_input))
+                except AttributeError:
+                    raise exceptions.ModelError(self._ambiguous_layer_drop_error_message(
+                                                layer_names_with_node_zero_as_input))
                 assert drop_layer_name is not None, 'Must specify layers to drop when ambiguous. Choose from: {}'.\
                     format(', '.join(layer_names_with_node_zero_as_input))
                 assert drop_layer_name in layer_names_with_node_zero_as_input, 'drop_layer_name must be one of: {}'.\
@@ -100,7 +178,7 @@ class ModelHandler(object):
                 drop_layer_name = self._get_name_of_first_node(symbol_dict[consts.NODES])
 
             logging.info('Dropping {}'.format(drop_layer_name))
-            print('Dropping {}'.format(drop_layer_name))
+            # print('Dropping {}'.format(drop_layer_name))
             layers_dropped.append(drop_layer_name)
 
             # Find node index of operator being deleted
@@ -134,8 +212,8 @@ class ModelHandler(object):
                     layers_dropped.append(symbol_dict[consts.NODES][join_idx]['name'])
                     logging.info('Dropping {} (join node auto-deleted)'.format(
                         symbol_dict[consts.NODES][join_idx]['name']))
-                    print('Dropping {} (join node auto-deleted)'.format(
-                        symbol_dict[consts.NODES][join_idx]['name']))
+                    # print('Dropping {} (join node auto-deleted)'.format(
+                    #     symbol_dict[consts.NODES][join_idx]['name']))
                     input_of_join = symbol_dict[consts.NODES][join_idx][consts.INPUTS][0]
                     # Delete join nodes
                     symbol_dict = self._delete_layer_nodes_given_operator_node(symbol_dict, join_idx)
@@ -155,11 +233,11 @@ class ModelHandler(object):
         sym = mx.sym.load_json(json.dumps(symbol_dict))
 
         logging.info('{} deleted from model bottom'.format(', '.join(layers_dropped)))
-        print('{} deleted from model bottom'.format(', '.join(layers_dropped)))
+        # print('{} deleted from model bottom'.format(', '.join(layers_dropped)))
         if drop_layer_names is not None:
             if len(drop_layer_names) > 0:
                 logging.warning('Did not use all of drop_layer_names: {}'.format(', '.join(drop_layer_names)))
-                print('Did not use all of drop_layer_names: {}'.format(', '.join(drop_layer_names)))
+                # print('Did not use all of drop_layer_names: {}'.format(', '.join(drop_layer_names)))
         self.update_sym(sym)
 
     @staticmethod
@@ -169,18 +247,21 @@ class ModelHandler(object):
                 return node['name']
 
     @staticmethod
-    def _delete_layer_nodes_given_operator_node(symbol_dict, node_idx):
-        # Find first node for this layer
-        for first_idx in reversed(range(node_idx + 1)):  # +1 because range(a,b) doesn't include b
+    def _get_idx_of_first_node_of_layer(operation_idx, arg_nodes):
+        for first_idx in reversed(range(operation_idx + 1)):  # +1 because range(a,b) doesn't include b
             # -1 because the first index is the index before the first that doesn't appear in arg nodes
             # Do not want to delete input (node 0)
-            if (first_idx - 1) not in symbol_dict[consts.ARG_NODES] or (first_idx - 1) == 0:
+            if (first_idx - 1) not in arg_nodes or (first_idx - 1) == 0:
                 break
+        return first_idx
+
+    def _delete_layer_nodes_given_operator_node(self, symbol_dict, node_idx):
+        # Find first node for this layer
+        first_idx = self._get_idx_of_first_node_of_layer(node_idx, symbol_dict[consts.ARG_NODES])
         for i in reversed(range(first_idx, node_idx+1)):  # Add 1 because range(a,b) doesn't include b
             del symbol_dict[consts.NODES][i]
         return symbol_dict
 
-    # Can we generate everything that isn't node from nodes?
     @staticmethod
     def _get_arg_nodes(nodes):
         # print('generating arg_nodes')
@@ -191,8 +272,12 @@ class ModelHandler(object):
         return arg_nodes
 
     @staticmethod
-    def _get_heads(nodes, output_layer_names):
+    def _get_heads(nodes, output_layer_names, top_layer_dropped=None):
         # print('generating heads')
+        # if top_layer_dropped is not None:
+            
+        
+        
         heads = []
         for idx, node in enumerate(nodes):
             if node['name'] in output_layer_names:
@@ -214,7 +299,8 @@ class ModelHandler(object):
                 input_map[node['name']].append(nodes[i[0]]['name'])
         return input_map
 
-    def _update_inputs(self, nodes, string_input_map, drop_layer_name, num_nodes_with_zero_as_input, join_deleted):
+    @staticmethod
+    def _update_inputs(nodes, string_input_map, drop_layer_name, num_nodes_with_zero_as_input, join_deleted):
         # print('updating inputs')
         # If more than one node has zero as input then we don't want to transfer the input of the dropped layer
         # We only want to ignore an input if a join was deleted
@@ -379,11 +465,6 @@ class ModelHandler(object):
 
     @staticmethod
     def _get_join_idx(nodes_using_zero_ids, nodes, nodes_before_layer_deleted):
-        # """Doesn't really work outside the most simple case"""
-        # print('FIND JOIN INDEX')
-        # print('nodes_using_zero_ids', nodes_using_zero_ids)
-        # for node in nodes_before_layer_deleted:
-            # print(node)
         # Create dictionary with key for each node using zero input
         parents = {}
         for n in nodes_using_zero_ids:
@@ -413,7 +494,7 @@ class ModelHandler(object):
             # print('parents', parents)
             value_list = list(parents.values())
             # print(value_list)
-            # Which nodes appear in both lists
+            # Find nodes that appear in both lists
             intersection = set(value_list[0]).intersection(*value_list)
             # print('intersection', intersection)
             if len(intersection) > 0:

@@ -35,6 +35,7 @@ INPUTS = 'inputs'
 ARG_NODES = 'arg_nodes'
 NODE_PTR = 'node_row_ptr'
 HEADS = 'heads'
+OUTPUT = '_output'
 
 
 class LayerType(Enum):
