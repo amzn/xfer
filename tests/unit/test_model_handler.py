@@ -126,26 +126,24 @@ class TestModelHandler(TestCase):
 
         with self.assertRaises(exceptions.ModelError):
             mh.drop_layer_top()
-            
+
     def test_drop_layer_top_split_1(self):
         mh, plus_layer_name = self._build_split_net()
         assert mh.layer_names == ['flatten0', 'a_1', 'a_2', 'a_3', 'b_1', 'b_2', plus_layer_name, 'softmax']
-        
+
         with self.assertLogs() as cm:
             mh.drop_layer_top()
-        print(cm.output)
         assert cm.output == ['INFO:root:softmax deleted from model top']
-        
+
         assert mh.layer_names == ['flatten0', 'a_1', 'a_2', 'a_3', 'b_1', 'b_2', plus_layer_name]
 
         with self.assertRaises(exceptions.ModelError):
             mh.drop_layer_top()
-            
+
         with self.assertLogs() as cm:
             mh.drop_layer_top(branch_to_keep=['a_3'])
-        print(cm.output)
         assert cm.output == ['INFO:root:{} deleted from model top'.format(plus_layer_name)]
-        
+
         assert mh.layer_names == ['flatten0', 'a_1', 'a_2', 'a_3']
 
     def test_drop_layer_bottom_1(self):
