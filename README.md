@@ -15,7 +15,7 @@ Xfer is a library that allows quick and easy transfer of knowledge<sup>[1](http:
 
 Xfer can be used as a pipeline that spans from extracting features to training a repurposer. The repurposer is then an object that carries out predictions in the target task.
 
-You can also use individual components of Xfer as part of your own pipeline. For example, you can leverage the feature extractor to extract features from deep neural networks or ModelHanlder, which allows for quick building of neural networks, even if you are not an MXNet expert.
+You can also use individual components of Xfer as part of your own pipeline. For example, you can leverage the feature extractor to extract features from deep neural networks or ModelHandler, which allows for quick building of neural networks, even if you are not an MXNet expert.
 
 #### Why should I use Xfer?
 * _Resource efficiency_: you don't have to train big neural networks from scratch.

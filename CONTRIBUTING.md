@@ -8,7 +8,7 @@ documentation, we greatly value feedback and contributions from our community.
 Following these guidelines helps smooth out the process of contributing for both you as a contributor and those who maintain the project, making better use of everyone's time and energy.
 
 ### Reporting a bug
-If you find a bug in Xfer, please file an issue using our [template](issue template), detailing as much about your setup as possible to help future developers in reproducing the issue. Tag it as a bug, with any additional tags as relevant.
+If you find a bug in Xfer, please file an issue, detailing as much about your setup as possible to help future developers in reproducing the issue. Tag it as a bug, with any additional tags as relevant.
 
 Information should contain the following:
 1. What version of Xfer and MXNet are you using?
@@ -26,16 +26,16 @@ If you're wishing for a feature that doesn't exist yet in Xfer, there are probab
 
 If you're thinking about adding code to Xfer, here are some guidelines to get you started.
 
-* If the change is a major feature, create a [CIP](link to CIP definition) in the docs/CIPs folder and post it as a PR, optionally with a prototype implementation of your proposed changes. This is to get community feedback on the changes and document the design reasoning of Xfer for future reference.
+* If the change is a major feature, create an issue using the [feature request template](https://github.com/amzn/xfer/issues/new?template=feature_request.md) to get community feedback on the proposed changes and document the design reasoning of Xfer for future reference.
 
 * Keep pull requests small, preferably one feature per pull request. This lowers the bar to entry for a reviewer, and keeps feedback focused for each feature.
 
 Some major areas where we appreciate contributions:
-* [Creating new Repurposers](repurposer_howto_link)
+* [Creating new Repurposers](https://xfer.readthedocs.io/en/master/demos/xfer-custom-repurposers.html)
 * Expanding on the capabilities of Model Handler.
-* Example notebooks showing how to repurpose models in new data domains. [Example](example)
+* [Example notebooks](https://github.com/amzn/xfer/tree/master/docs/demos) showing how to repurpose models in new data domains.
 
-If you're still not sure where to begin, have a look at our [issues](issues) page for open work.
+If you're still not sure where to begin, have a look at our [issues](https://github.com/amzn/xfer/issues) page for open work.
 
 
 ## Contributing via Pull Requests
@@ -44,7 +44,7 @@ So you've written up a new Repurposer and you want to give it back to the commun
 
 1. You check existing open, and recently merged, pull requests to make sure someone else hasn't addressed the problem already.
 2. You open an issue to discuss any significant work - we would hate for your time to be wasted.
-3. You are working against the latest source on the *master* branch.
+3. You are working against the latest source on the *develop* branch and raise pull request against *develop* branch.
 
 To send us a pull request, please:
 
@@ -73,9 +73,7 @@ Before submitting the pull request, please go through this checklist to make the
 * Do all public functions have docstrings including examples? If you added a new module, did you add it to the Sphinx ```api.rst``` file in the ```doc``` folder?
 * Is the code style correct (PEP8)? You can verify this by running `flake8` from the top level directory.
 * Is the commit message formatted correctly?
-* If this is a large addition, is there a tutorial or more extensive module-level description? Did you discuss the addition in a [CIP](CIP)? Is there an issue related to the change? If so, please link the issue or CIP.
-
-
+* If this is a large addition, is there a tutorial or more extensive module-level description? Did you discuss the addition in a [feature request](https://github.com/amzn/xfer/issues/new?template=feature_request.md) and provide a link to it?
 ## Setting up a development environment
 
 ### Building the code
@@ -124,7 +122,7 @@ make html
 
 ## Licensing
 
-See the [LICENSE](https://github.com/${GITHUB_ORG}/${GITHUB_REPO}/blob/master/LICENSE) file for our project's licensing. We will ask you to confirm the licensing of your contribution.
+See the [LICENSE](https://github.com/amzn/xfer/blob/master/LICENSE) file for our project's licensing. We will ask you to confirm the licensing of your contribution.
 
 We may ask you to sign a [Contributor License Agreement (CLA)](http://en.wikipedia.org/wiki/Contributor_License_Agreement) for larger changes.
 

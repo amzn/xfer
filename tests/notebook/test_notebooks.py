@@ -7,7 +7,10 @@ import nbformat
 
 
 demo_path = 'docs/demos/'
-demo_notebooks = [filename for filename in os.listdir(demo_path) if filename.endswith('.ipynb')]
+demo_notebooks = [filename for filename in os.listdir(demo_path)
+                  if (filename.endswith('.ipynb') and 'hpo' not in filename)]  # run hpo notebook in a separate test
+hpo_notebook = [filename for filename in os.listdir(demo_path) if (filename.endswith('.ipynb') and 'hpo' in filename)]
+
 original_path = os.getcwd()
 
 temp_notebook = 'temp_notebook.ipynb'
@@ -48,9 +51,7 @@ def _notebook_run(notebook):
     return nb, errors
 
 
-@pytest.mark.notebook
-@pytest.mark.parametrize("notebook", demo_notebooks)
-def test_ipynb(notebook):
+def _test_ipynb(notebook):
     # Skip any temporary notebook
     if notebook == temp_notebook:
         return
@@ -63,3 +64,15 @@ def test_ipynb(notebook):
     os.chdir(original_path)
     # Assert no errors were collected from notebook
     assert errors == [], 'Errors found in {}\n{}'.format(notebook, errors)
+
+
+@pytest.mark.notebook
+@pytest.mark.parametrize("notebook", demo_notebooks)
+def test_ipynb(notebook):
+    _test_ipynb(notebook)
+
+
+@pytest.mark.notebook_hpo
+@pytest.mark.parametrize("notebook", hpo_notebook)
+def test_hpo_ipynb(notebook):
+    _test_ipynb(notebook)
