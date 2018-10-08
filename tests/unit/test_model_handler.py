@@ -36,7 +36,10 @@ class TestModelHandler(TestCase):
                         [1, 'ant/image_0002.jpg'], [2, 'anchor/image_0001.jpg'], [2, 'anchor/image_0002.jpg']]
         self.image_iter = mx.image.ImageIter(2, (3, 224, 224), imglist=self.imglist, path_root='tests/data/test_images',
                                              label_name='softmaxoutput1_label', data_name=self.data_name)
-
+        self.symbol_dict = json.loads(self.mh.symbol.tojson())
+        self.nodes = self.symbol_dict['nodes']
+        self.arg_nodes = self.symbol_dict['arg_nodes']
+        self.heads = self.symbol_dict['heads']
         self.act1_id = 4
         self.conv2_id = 7
 
@@ -53,7 +56,7 @@ class TestModelHandler(TestCase):
         mh.drop_layer_top()
         mh.drop_layer_bottom()
 
-        assert list(set(old_layer_names).difference(set(mh.layer_names))) == ['bn_data', 'softmax']
+        assert sorted(list(set(old_layer_names).difference(set(mh.layer_names)))) == sorted(['bn_data', 'softmax'])
 
     def test_constructor_binded_module(self):
         # Assert module that is binded can be used to init a ModelHandler object and can add/drop layers
@@ -401,6 +404,216 @@ class TestModelHandler(TestCase):
             assert layer_name in list(self.mh.layer_type_dict.keys())
         assert outputs_post == [self.data_name, 'conv1_1_weight', 'conv1_1_bias', 'conv1_1_output', 'fc1_weight',
                                 'fc1_bias', 'fc1_output'] + outputs_pre[1:]
+
+    def test_assert_model_has_single_output(self):
+        data = mx.symbol.Variable('data')
+        fc1 = mx.symbol.FullyConnected(data=data, name='fc1', num_hidden=128)
+        act1 = mx.symbol.Activation(data=fc1, name='relu1', act_type="relu")
+        fc2 = mx.symbol.FullyConnected(data=act1, name='fc2', num_hidden=64)
+        act2 = mx.symbol.Activation(data=fc2, name='relu2', act_type="relu")
+        fc3 = mx.symbol.FullyConnected(data=act2, name='fc3', num_hidden=10)
+        fc4 = mx.sym.FullyConnected(data=fc3, name='fc4_1', num_hidden=10)
+        sm1 = mx.symbol.SoftmaxOutput(data=fc4, name='softmax1')
+        fc5 = mx.sym.FullyConnected(data=fc3, name='fc4_2', num_hidden=10)
+        sm2 = mx.symbol.SoftmaxOutput(data=fc5, name='softmax2')
+        sm3 = mx.symbol.SoftmaxOutput(data=fc2, name='softmax3')
+
+        output_1 = sm1
+        output_2 = mx.symbol.Group([sm1, sm2])
+        output_3 = mx.symbol.Group([sm1, sm2, sm3])
+
+        self.mh._assert_model_has_single_output(self.mh._get_symbol_dict(output_1))
+        with self.assertRaises(exceptions.ModelError):
+            self.mh._assert_model_has_single_output(self.mh._get_symbol_dict(output_2))
+        with self.assertRaises(exceptions.ModelError):
+            self.mh._assert_model_has_single_output(self.mh._get_symbol_dict(output_3))
+
+    def test_get_names_of_inputs_to_last_layer_1(self):
+        symbol_dict = self.mh._get_symbol_dict(self.mh.symbol)
+        last_layer_name = self.mh.layer_names[-1]
+
+        assert self.mh._get_names_of_inputs_to_last_layer(symbol_dict, last_layer_name) == ['fullyconnected0']
+
+    def test_get_names_of_inputs_to_last_layer_2(self):
+        data = mx.symbol.Variable('data')
+        fc1 = mx.symbol.FullyConnected(data=data, name='fc1', num_hidden=128)
+        act1 = mx.symbol.Activation(data=fc1, name='relu1', act_type="relu")
+        fc2 = mx.symbol.FullyConnected(data=act1, name='fc2', num_hidden=64)
+        act2 = mx.symbol.Activation(data=fc2, name='relu2', act_type="relu")
+        fc3 = mx.symbol.FullyConnected(data=act2, name='fc3', num_hidden=10)
+        plus = fc2.__add__(fc3)
+
+        symbol_dict = self.mh._get_symbol_dict(plus)
+        last_layer_name = 'pool1'
+
+        assert self.mh._get_names_of_inputs_to_last_layer(symbol_dict, last_layer_name) == ['fc2', 'fc3']
+
+    def test_get_names_of_inputs_to_last_layer_3(self):
+        data = mx.symbol.Variable('data')
+        fc1 = mx.symbol.FullyConnected(data=data, name='fc1', num_hidden=128)
+        act1 = mx.symbol.Activation(data=fc1, name='relu1', act_type="relu")
+        fc2 = mx.symbol.FullyConnected(data=act1, name='fc2', num_hidden=64)
+        act2 = mx.symbol.Activation(data=fc2, name='relu2', act_type="relu")
+        fc3 = mx.symbol.FullyConnected(data=act2, name='fc3', num_hidden=10)
+        concat = mx.symbol.concat(fc1, fc2, fc3, name='concat1')
+
+        symbol_dict = self.mh._get_symbol_dict(concat)
+        last_layer_name = 'concat1'
+
+        assert self.mh._get_names_of_inputs_to_last_layer(symbol_dict, last_layer_name) == ['fc1', 'fc2', 'fc3']
+
+    def test_ambiguous_layer_drop_error_message(self):
+        layer_names = ['layer0', 'layer1']
+
+        assert self.mh._ambiguous_layer_drop_error_message(layer_names) ==\
+            'Found an ambiguous case. Please choose from: layer0, layer1'
+
+    def test_get_name_of_first_node(self):
+        name = self.mh._get_name_of_first_node(self.symbol_dict['nodes'])
+        assert name == 'conv1'
+
+    def test_get_idx_of_first_node_of_layer(self):
+        assert self.mh._get_idx_of_first_node_of_layer(3, self.arg_nodes) == 1
+        assert self.mh._get_idx_of_first_node_of_layer(4, self.arg_nodes) == 4
+        assert self.mh._get_idx_of_first_node_of_layer(7, self.arg_nodes) == 5
+        assert self.mh._get_idx_of_first_node_of_layer(10, self.arg_nodes) == 10
+        assert self.mh._get_idx_of_first_node_of_layer(15, self.arg_nodes) == 14
+
+    def test_delete_layer_nodes_given_operator_node(self):
+        original_length = len(self.nodes)
+        self._test_delete_layer_nodes_given_operator_node_convolution(original_length)
+        self._test_delete_layer_nodes_given_operator_node_activation(original_length)
+        self._test_delete_layer_nodes_given_operator_node_softmax(original_length)
+        self._test_delete_layer_nodes_given_operator_node_fully_connected(original_length)
+
+    def _test_delete_layer_nodes_given_operator_node_convolution(self, original_length):
+        output_dict = self.mh._delete_layer_nodes_given_operator_node(self.symbol_dict, 3)
+
+        assert len(output_dict['nodes']) == original_length - 3
+
+    def _test_delete_layer_nodes_given_operator_node_activation(self, original_length):
+        output_dict = self.mh._delete_layer_nodes_given_operator_node(self.symbol_dict, 8)
+
+        assert len(output_dict['nodes']) == original_length - 1
+
+    def _test_delete_layer_nodes_given_operator_node_fully_connected(self, original_length):
+        output_dict = self.mh._delete_layer_nodes_given_operator_node(self.symbol_dict, 13)
+
+        assert len(output_dict['nodes']) == original_length - 3
+
+    def _test_delete_layer_nodes_given_operator_node_softmax(self, original_length):
+        output_dict = self.mh._delete_layer_nodes_given_operator_node(self.symbol_dict, 15)
+
+        assert len(output_dict['nodes']) == original_length - 2
+
+    def test_get_arg_nodes(self):
+        assert self.mh._get_arg_nodes(self.nodes) == [0, 1, 2, 5, 6, 11, 12, 14]
+
+        null_node = {'op': 'null'}
+        op_node = {'op': 'FullyConnected'}
+        nodes = [null_node, op_node, op_node, null_node, null_node, null_node, op_node]
+
+        assert self.mh._get_arg_nodes(nodes) == [0, 3, 4, 5]
+
+    def test_get_heads(self):
+        assert self.mh._get_heads(self.nodes, 'softmaxoutput1') == [[15, 0, 0]]
+        assert self.mh._get_heads(self.nodes[-11:], 'softmaxoutput1') == [[10, 0, 0]]
+        assert self.mh._get_heads(self.nodes[-7:], 'softmaxoutput1') == [[6, 0, 0]]
+
+    def test_get_node_row_ptr(self):
+        assert self.mh._get_node_row_ptr(self.nodes) == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+        assert self.mh._get_node_row_ptr(self.nodes[:6]) == [0, 1, 2, 3, 4, 5, 6]
+        assert self.mh._get_node_row_ptr(self.nodes[:3]) == [0, 1, 2, 3]
+
+    def test_get_string_input_map(self):
+        expected_output = {'conv2': ['act1', 'conv2_weight', 'conv2_bias'], 'flatten1': ['pool1'], 'conv1_bias': [],
+                           'softmaxoutput1_label': [],
+                           'fullyconnected0': ['flatten1', 'fullyconnected0_weight', 'fullyconnected0_bias'],
+                           'softmaxoutput1': ['fullyconnected0', 'softmaxoutput1_label'], 'data': [],
+                           'conv2_weight': [], 'fullyconnected0_bias': [], 'pool1': ['act2'], 'act2': ['conv2'],
+                           'conv1': ['data', 'conv1_weight', 'conv1_bias'], 'fullyconnected0_weight': [],
+                           'conv2_bias': [], 'act1': ['conv1'], 'conv1_weight': []}
+
+        assert self.mh._get_string_input_map(self.nodes) == expected_output
+
+    def test_update_inputs(self):
+        nodes = self.nodes[-12:]
+        nodes.insert(0, {'op': 'null', 'name': 'data', 'inputs': []})
+        drop_layer_name = 'conv1'
+        num_nodes_with_zero_as_input = 1
+        join_deleted = False
+        string_input_map = {'conv2': ['act1', 'conv2_weight', 'conv2_bias'], 'flatten1': ['pool1'], 'conv1_bias': [],
+                            'softmaxoutput1_label': [],
+                            'fullyconnected0': ['flatten1', 'fullyconnected0_weight', 'fullyconnected0_bias'],
+                            'softmaxoutput1': ['fullyconnected0', 'softmaxoutput1_label'], 'data': [],
+                            'conv2_weight': [], 'fullyconnected0_bias': [], 'pool1': ['act2'], 'act2': ['conv2'],
+                            'conv1': ['data', 'conv1_weight', 'conv1_bias'], 'fullyconnected0_weight': [],
+                            'conv2_bias': [], 'act1': ['conv1'], 'conv1_weight': []}
+        nodes = self.mh._update_inputs(nodes, string_input_map, drop_layer_name, num_nodes_with_zero_as_input,
+                                       join_deleted)
+
+        expected_inputs = [[], [[0, 0, 0]], [], [], [[1, 0, 0], [2, 0, 0], [3, 0, 0]], [[4, 0, 0]], [[5, 0, 0]],
+                           [[6, 0, 0]], [], [], [[7, 0, 0], [8, 0, 0], [9, 0, 0]], [],  [[10, 0, 0], [11, 0, 0]]]
+
+        for node, expected_input in zip(nodes, expected_inputs):
+            assert node['inputs'] == expected_input
+
+    def test_get_output_layer_names(self):
+        self.mh._get_output_layer_names(self.nodes, self.heads) == ['softmaxoutput1']
+
+        data = mx.symbol.Variable('data')
+        fc1 = mx.symbol.FullyConnected(data=data, name='fc1', num_hidden=128)
+        act1 = mx.symbol.Activation(data=fc1, name='relu1', act_type="relu")
+        fc2 = mx.symbol.FullyConnected(data=act1, name='fc2', num_hidden=64)
+        act2 = mx.symbol.Activation(data=fc2, name='relu2', act_type="relu")
+        fc3 = mx.symbol.FullyConnected(data=act2, name='fc3', num_hidden=10)
+        fc4 = mx.sym.FullyConnected(data=fc3, name='fc4_1', num_hidden=10)
+        sm1 = mx.symbol.SoftmaxOutput(data=fc4, name='softmax1')
+        fc5 = mx.sym.FullyConnected(data=fc3, name='fc4_2', num_hidden=10)
+        sm2 = mx.symbol.SoftmaxOutput(data=fc5, name='softmax2')
+        sm3 = mx.symbol.SoftmaxOutput(data=fc2, name='softmax3')
+
+        outputs = [sm1, mx.symbol.Group([sm1, sm2]), mx.symbol.Group([sm1, sm2, sm3])]
+        output_names = [['softmax1'], ['softmax1', 'softmax2'], ['softmax1', 'softmax2', 'softmax3']]
+
+        for output, output_name in zip(outputs, output_names):
+            symbol_dict = self.mh._get_symbol_dict(output)
+            self.mh._get_output_layer_names(symbol_dict['nodes'], symbol_dict['heads']) == output_name
+
+    @staticmethod
+    def _build_symbol_with_nodes_with_zero_input():
+        data = mx.symbol.Variable('data')
+        fc1a = mx.symbol.FullyConnected(data=data, name='fc1a', num_hidden=128)
+        act1a = mx.symbol.Activation(data=fc1a, name='relu1a', act_type="relu")
+        fc1b = mx.symbol.FullyConnected(data=data, name='fc1b', num_hidden=64)
+        act1b = mx.symbol.Activation(data=fc1b, name='relu1b', act_type="relu")
+        plus = act1a.__add__(act1b)
+        softmax = mx.symbol.SoftmaxOutput(data=plus, name='softmax')
+        return softmax
+
+    def test_get_layer_names_with_node_zero_as_input(self):
+        softmax = self._build_symbol_with_nodes_with_zero_input()
+        symbol_dict = self.mh._get_symbol_dict(softmax)
+
+        names = self.mh._get_layer_names_with_node_zero_as_input(symbol_dict['nodes'])
+
+        assert names == ['fc1a', 'fc1b']
+
+    def test_get_layer_ids_with_node_zero_as_input(self):
+        softmax = self._build_symbol_with_nodes_with_zero_input()
+        symbol_dict = self.mh._get_symbol_dict(softmax)
+
+        ids = self.mh._get_layer_ids_with_node_zero_as_input(symbol_dict['nodes'])
+
+        assert ids == [3, 7]
+
+    def test_get_join_idx(self):
+        softmax = self._build_symbol_with_nodes_with_zero_input()
+        symbol_dict = self.mh._get_symbol_dict(softmax)
+
+        idx = self.mh._get_join_idx([3, 7], symbol_dict['nodes'], symbol_dict['nodes'])
+
+        assert idx == 9
 
     @staticmethod
     def create_csv_iterator(batch_size=1):
