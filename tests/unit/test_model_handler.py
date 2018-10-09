@@ -317,6 +317,48 @@ class TestModelHandler(TestCase):
 
         assert mh.layer_names == ['softmax']
 
+    def test_drop_layer_bottom_with_2_joins(self):
+        # Build symbol
+        data = mx.sym.Variable('data')
+
+        fc1_1 = mx.sym.FullyConnected(data=data, num_hidden=5)
+        fc1_2 = mx.sym.FullyConnected(data=data, num_hidden=5)
+        fc1_3 = mx.sym.FullyConnected(data=data, num_hidden=5)
+        fc1_4 = mx.sym.FullyConnected(data=data, num_hidden=5)
+        fc2_1 = mx.sym.FullyConnected(data=fc1_1, num_hidden=5)
+        fc2_2 = mx.sym.FullyConnected(data=fc1_2, num_hidden=5)
+        fc2_3 = mx.sym.FullyConnected(data=fc1_3, num_hidden=5)
+        fc2_4 = mx.sym.FullyConnected(data=fc1_4, num_hidden=5)
+
+        concat3_1 = mx.sym.concat(fc2_1, fc2_2)
+        concat3_2 = mx.sym.concat(fc2_3, fc2_4)
+        concat4 = mx.sym.concat(concat3_1, concat3_2)
+
+        softmax = mx.sym.SoftmaxOutput(concat4, name='softmax')
+
+        mh = model_handler.ModelHandler(mx.mod.Module(softmax))
+
+        assert mh.layer_names == ['fullyconnected0', 'fullyconnected4', 'fullyconnected1', 'fullyconnected5', 'concat0',
+                                  'fullyconnected2', 'fullyconnected6', 'fullyconnected3', 'fullyconnected7', 'concat1',
+                                  'concat2', 'softmax']
+
+        mh.drop_layer_bottom(num_layers_to_drop=2, drop_layer_names=['fullyconnected0', 'fullyconnected4'])
+
+        print(mh.layer_names)
+        assert mh.layer_names == ['fullyconnected1', 'fullyconnected5', 'fullyconnected2', 'fullyconnected6',
+                                  'fullyconnected3', 'fullyconnected7', 'concat1', 'concat2', 'softmax']
+
+        mh.drop_layer_bottom(num_layers_to_drop=2, drop_layer_names=['fullyconnected1', 'fullyconnected5'])
+
+        print(mh.layer_names)
+        assert mh.layer_names == ['fullyconnected2', 'fullyconnected6', 'fullyconnected3', 'fullyconnected7', 'concat1',
+                                  'softmax']
+
+        mh.drop_layer_bottom(num_layers_to_drop=2, drop_layer_names=['fullyconnected2', 'fullyconnected6'])
+
+        print(mh.layer_names)
+        assert mh.layer_names == ['fullyconnected3', 'fullyconnected7', 'softmax']
+
     def test_add_layer_top(self):
         # Drop output layer so that layers can be added to top
         self.mh.drop_layer_top()
@@ -468,8 +510,8 @@ class TestModelHandler(TestCase):
         assert self.mh._ambiguous_layer_drop_error_message(layer_names) ==\
             'Found an ambiguous case. Please choose from: layer0, layer1'
 
-    def test_get_name_of_first_node(self):
-        name = self.mh._get_name_of_first_node(self.symbol_dict['nodes'])
+    def test_get_name_of_first_operation(self):
+        name = self.mh._get_name_of_first_operation(self.symbol_dict['nodes'])
         assert name == 'conv1'
 
     def test_get_idx_of_first_node_of_layer(self):
@@ -519,11 +561,6 @@ class TestModelHandler(TestCase):
         assert self.mh._get_heads(self.nodes, 'softmaxoutput1') == [[15, 0, 0]]
         assert self.mh._get_heads(self.nodes[-11:], 'softmaxoutput1') == [[10, 0, 0]]
         assert self.mh._get_heads(self.nodes[-7:], 'softmaxoutput1') == [[6, 0, 0]]
-
-    def test_get_node_row_ptr(self):
-        assert self.mh._get_node_row_ptr(self.nodes) == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-        assert self.mh._get_node_row_ptr(self.nodes[:6]) == [0, 1, 2, 3, 4, 5, 6]
-        assert self.mh._get_node_row_ptr(self.nodes[:3]) == [0, 1, 2, 3]
 
     def test_get_string_input_map(self):
         expected_output = {'conv2': ['act1', 'conv2_weight', 'conv2_bias'], 'flatten1': ['pool1'], 'conv1_bias': [],
@@ -602,7 +639,7 @@ class TestModelHandler(TestCase):
         softmax = self._build_symbol_with_nodes_with_zero_input()
         symbol_dict = self.mh._get_symbol_dict(softmax)
 
-        idx = self.mh._get_join_idx([3, 7], symbol_dict['nodes'], symbol_dict['nodes'])
+        idx = self.mh._get_join_idx([3, 7], symbol_dict['nodes'], symbol_dict['nodes'], 'fc1a')
 
         assert idx == 9
 
