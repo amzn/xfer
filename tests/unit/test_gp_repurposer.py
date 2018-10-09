@@ -14,12 +14,11 @@
 from unittest.mock import patch
 import numpy as np
 import os
+import GPy
 
 from xfer import load, GpRepurposer
 from .test_meta_model_repurposer import MetaModelRepurposerTestCase
 from ..repurposer_test_utils import RepurposerTestUtils
-
-import GPy  # Must be imported after xfer to avoid matplotlib backend errors because backend is set in xfer init
 
 
 class GpRepurposerTestCase(MetaModelRepurposerTestCase):
