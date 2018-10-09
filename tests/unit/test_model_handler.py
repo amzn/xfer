@@ -540,17 +540,8 @@ class TestModelHandler(TestCase):
         nodes = self.nodes[-12:]
         nodes.insert(0, {'op': 'null', 'name': 'data', 'inputs': []})
         drop_layer_name = 'conv1'
-        num_nodes_with_zero_as_input = 1
         join_deleted = False
-        string_input_map = {'conv2': ['act1', 'conv2_weight', 'conv2_bias'], 'flatten1': ['pool1'], 'conv1_bias': [],
-                            'softmaxoutput1_label': [],
-                            'fullyconnected0': ['flatten1', 'fullyconnected0_weight', 'fullyconnected0_bias'],
-                            'softmaxoutput1': ['fullyconnected0', 'softmaxoutput1_label'], 'data': [],
-                            'conv2_weight': [], 'fullyconnected0_bias': [], 'pool1': ['act2'], 'act2': ['conv2'],
-                            'conv1': ['data', 'conv1_weight', 'conv1_bias'], 'fullyconnected0_weight': [],
-                            'conv2_bias': [], 'act1': ['conv1'], 'conv1_weight': []}
-        nodes = self.mh._update_inputs(nodes, string_input_map, drop_layer_name, num_nodes_with_zero_as_input,
-                                       join_deleted)
+        nodes = self.mh._update_inputs(nodes, self.nodes, drop_layer_name, join_deleted, None)
 
         expected_inputs = [[], [[0, 0, 0]], [], [], [[1, 0, 0], [2, 0, 0], [3, 0, 0]], [[4, 0, 0]], [[5, 0, 0]],
                            [[6, 0, 0]], [], [], [[7, 0, 0], [8, 0, 0], [9, 0, 0]], [],  [[10, 0, 0], [11, 0, 0]]]
