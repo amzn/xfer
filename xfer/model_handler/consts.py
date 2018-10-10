@@ -12,7 +12,7 @@
 #   permissions and limitations under the License.
 # ==============================================================================
 """
-Model Handler constants
+Model Handler constants.
 """
 
 from enum import Enum

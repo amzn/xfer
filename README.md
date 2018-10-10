@@ -44,7 +44,7 @@ predictions = repurposer.predict_label(test_iterator)
 
 ## Installation
 * __Dependencies:__
-Primary dependencies are MXNet >=1.2 and GPy >= 1.9.5. See [requirements](requirements.txt).
+Primary dependencies are MXNet >=1.2 and GPy >= 1.9.5. See all requirements in [setup.py](setup.py).
 * __Supported architectures / versions:__
 Python 3.6+ on MacOS and Amazon Linux. 
 
