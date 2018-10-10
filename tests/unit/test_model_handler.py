@@ -507,8 +507,20 @@ class TestModelHandler(TestCase):
     def test_ambiguous_layer_drop_error_message(self):
         layer_names = ['layer0', 'layer1']
 
-        assert self.mh._ambiguous_layer_drop_error_message(layer_names) ==\
-            'Found an ambiguous case. Please choose from: layer0, layer1'
+        assert self.mh._ambiguous_layer_drop_error_message(layer_names, 0) ==\
+            'Found an ambiguous layer (drop layer number: 0). Please choose one from: layer0, layer1'
+
+        assert self.mh._ambiguous_layer_drop_error_message(layer_names, 1) ==\
+            'Found an ambiguous layer (drop layer number: 1). Please choose one from: layer0, layer1'
+
+        assert self.mh._ambiguous_layer_drop_error_message(layer_names, 2) ==\
+            'Found an ambiguous layer (drop layer number: 2). Please choose one from: layer0, layer1'
+
+        assert self.mh._ambiguous_layer_drop_error_message(layer_names, 3) ==\
+            'Found an ambiguous layer (drop layer number: 3). Please choose one from: layer0, layer1'
+
+        assert self.mh._ambiguous_layer_drop_error_message(layer_names, 4) ==\
+            'Found an ambiguous layer (drop layer number: 4). Please choose one from: layer0, layer1'
 
     def test_get_name_of_first_operation(self):
         name = self.mh._get_name_of_first_operation(self.symbol_dict['nodes'])

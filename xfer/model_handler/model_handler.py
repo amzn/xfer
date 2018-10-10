@@ -76,10 +76,10 @@ class ModelHandler(object):
                 # If an IndexError is raised, it means that not enough layer names were given in branch_to_keep
                 except (AttributeError, IndexError):
                     raise exceptions.ModelError(self._ambiguous_layer_drop_error_message(
-                                                names_of_inputs_to_last_layer))
+                                                names_of_inputs_to_last_layer, n))
                 if new_last_layer is None or new_last_layer not in names_of_inputs_to_last_layer:
                     raise exceptions.ModelError(self._ambiguous_layer_drop_error_message(
-                                                names_of_inputs_to_last_layer))
+                                                names_of_inputs_to_last_layer, n))
             else:
                 # Get name of layer before drop_layer_name
                 next_operation = False
@@ -129,10 +129,10 @@ class ModelHandler(object):
                 # If an IndexError is raised, it means that not enough layer names were given in drop_layer_names
                 except (AttributeError, IndexError):
                     raise exceptions.ModelError(self._ambiguous_layer_drop_error_message(
-                                                layer_names_with_node_zero_as_input))
+                                                layer_names_with_node_zero_as_input, n))
                 if drop_layer_name is None or drop_layer_name not in layer_names_with_node_zero_as_input:
                     raise exceptions.ModelError(self._ambiguous_layer_drop_error_message(
-                                                layer_names_with_node_zero_as_input))
+                                                layer_names_with_node_zero_as_input, n))
 
             # Get output layer names
             temp_symbol_dict = copy.deepcopy(symbol_dict)
@@ -441,11 +441,12 @@ class ModelHandler(object):
         return layer_names
 
     @staticmethod
-    def _ambiguous_layer_drop_error_message(layer_names):
+    def _ambiguous_layer_drop_error_message(layer_names, n):
         """
         Return error message for ambiguous layer drops.
         """
-        return 'Found an ambiguous case. Please choose from: {}'.format(', '.join(layer_names))
+        return 'Found an ambiguous layer (drop layer number: {}). Please choose one from: {}'\
+            .format(n, ', '.join(layer_names))
 
     @staticmethod
     def _get_layer_names_with_node_zero_as_input(nodes):
