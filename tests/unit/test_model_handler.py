@@ -470,13 +470,14 @@ class TestModelHandler(TestCase):
         with self.assertRaises(exceptions.ModelError):
             self.mh._assert_model_has_single_output(self.mh._get_symbol_dict(output_3))
 
-    def test_get_names_of_inputs_to_last_layer_1(self):
+    def test_get_node_ids_of_inputs_to_layer(self):
         symbol_dict = self.mh._get_symbol_dict(self.mh.symbol)
-        last_layer_name = self.mh.layer_names[-1]
 
-        assert self.mh._get_names_of_inputs_to_last_layer(symbol_dict, last_layer_name) == ['fullyconnected0']
+        assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 7) == [4]
+        assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 8) == [7]
+        assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 15) == [13]
 
-    def test_get_names_of_inputs_to_last_layer_2(self):
+    def test_get_node_ids_of_inputs_to_layer_split_2(self):
         data = mx.symbol.Variable('data')
         fc1 = mx.symbol.FullyConnected(data=data, name='fc1', num_hidden=128)
         act1 = mx.symbol.Activation(data=fc1, name='relu1', act_type="relu")
@@ -486,11 +487,12 @@ class TestModelHandler(TestCase):
         plus = fc2.__add__(fc3)
 
         symbol_dict = self.mh._get_symbol_dict(plus)
-        last_layer_name = 'pool1'
 
-        assert self.mh._get_names_of_inputs_to_last_layer(symbol_dict, last_layer_name) == ['fc2', 'fc3']
+        assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 7) == [4]
+        assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 8) == [7]
+        assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 12) == [7, 11]
 
-    def test_get_names_of_inputs_to_last_layer_3(self):
+    def test_get_node_ids_of_inputs_to_layer_split_3(self):
         data = mx.symbol.Variable('data')
         fc1 = mx.symbol.FullyConnected(data=data, name='fc1', num_hidden=128)
         act1 = mx.symbol.Activation(data=fc1, name='relu1', act_type="relu")
@@ -500,9 +502,10 @@ class TestModelHandler(TestCase):
         concat = mx.symbol.concat(fc1, fc2, fc3, name='concat1')
 
         symbol_dict = self.mh._get_symbol_dict(concat)
-        last_layer_name = 'concat1'
 
-        assert self.mh._get_names_of_inputs_to_last_layer(symbol_dict, last_layer_name) == ['fc1', 'fc2', 'fc3']
+        assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 4) == [3]
+        assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 11) == [8]
+        assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 12) == [3, 7, 11]
 
     def test_ambiguous_layer_drop_error_message(self):
         layer_names = ['layer0', 'layer1']
@@ -630,14 +633,6 @@ class TestModelHandler(TestCase):
         plus = act1a.__add__(act1b)
         softmax = mx.symbol.SoftmaxOutput(data=plus, name='softmax')
         return softmax
-
-    def test_get_layer_names_with_node_zero_as_input(self):
-        softmax = self._build_symbol_with_nodes_with_zero_input()
-        symbol_dict = self.mh._get_symbol_dict(softmax)
-
-        names = self.mh._get_layer_names_with_node_zero_as_input(symbol_dict['nodes'])
-
-        assert names == ['fc1a', 'fc1b']
 
     def test_get_layer_ids_with_node_zero_as_input(self):
         softmax = self._build_symbol_with_nodes_with_zero_input()

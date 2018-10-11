@@ -67,9 +67,12 @@ class ModelHandler(object):
             symbol_dict = self._get_symbol_dict(sym)
 
             drop_layer_name = symbol_dict[consts.NODES][-1][consts.NAME]  # Get name of last layer
-            names_of_inputs_to_last_layer = self._get_names_of_inputs_to_last_layer(symbol_dict, drop_layer_name)
+            last_layer_input_ids = self._get_node_ids_of_inputs_to_layer(symbol_dict,
+                                                                         len(symbol_dict[consts.NODES]) - 1)
+            last_layer_input_names = [v[consts.NAME] for c, v in enumerate(symbol_dict[consts.NODES])
+                                      if c in last_layer_input_ids]
 
-            new_last_layer = self._get_relevant_layer_name_ambiguous(names_of_inputs_to_last_layer, branch_to_keep, n)
+            new_last_layer = self._get_relevant_layer_name_ambiguous(last_layer_input_names, branch_to_keep, n)
 
             # If case is not ambiguous then new last layer is simply the penultimate layer
             if new_last_layer is None:
@@ -110,8 +113,10 @@ class ModelHandler(object):
         for n in range(num_layers_to_drop):
             temp_symbol_dict = copy.deepcopy(symbol_dict)  # Make copy of symbol dictionary before any changes made
 
-            drop_layer_name = self._get_relevant_layer_name_ambiguous(self._get_layer_names_with_node_zero_as_input(
-                                                                       symbol_dict[consts.NODES]), drop_layer_names, n)
+            nodes_using_zero_ids = self._get_layer_ids_with_node_zero_as_input(symbol_dict[consts.NODES])
+            nodes_using_zero_ids_names = [v[consts.NAME] for c, v in enumerate(symbol_dict[consts.NODES])
+                                          if c in nodes_using_zero_ids]
+            drop_layer_name = self._get_relevant_layer_name_ambiguous(nodes_using_zero_ids_names, drop_layer_names, n)
             # If case is not ambiguous then the dropped layer is simply the first layer
             if drop_layer_name is None:
                 drop_layer_name = self._get_name_of_first_operation(symbol_dict[consts.NODES])
@@ -220,15 +225,14 @@ class ModelHandler(object):
         """
         Remove a joining layer if it only has a single input and is therefore useless.
         """
-        layer_names_with_node_zero_as_input = self._get_layer_names_with_node_zero_as_input(nodes_before)
+        # Get list of indexes for nodes which have the zeroth node as an input
+        nodes_using_zero_ids = self._get_layer_ids_with_node_zero_as_input(nodes_before)
 
         join_deleted = False
         join_idx = None
         join_layer_name = None
         # If more than one node had zero as input there may be a join layer than needs deleting
-        if len(layer_names_with_node_zero_as_input) > 1:
-            # Get list of indexes for nodes which have zero as an input
-            nodes_using_zero_ids = self._get_layer_ids_with_node_zero_as_input(nodes_before)
+        if len(nodes_using_zero_ids) > 1:
             # Find joining node index
             join_idx = self._get_join_idx(nodes_using_zero_ids, symbol_dict[consts.NODES],
                                           nodes_before, drop_layer_name)
@@ -347,7 +351,7 @@ class ModelHandler(object):
         Return the nodes list with correct input values.
         """
         string_input_map = self._get_string_input_map(original_nodes)
-        num_nodes_with_zero_as_input = len(self._get_layer_names_with_node_zero_as_input(original_nodes))
+        num_nodes_with_zero_as_input = len(self._get_layer_ids_with_node_zero_as_input(original_nodes))
         # Get original index of dropped layer
         for drop_layer_original_idx, node in enumerate(original_nodes):
             if node[consts.NAME] == drop_layer_name:
@@ -425,31 +429,25 @@ class ModelHandler(object):
                     ', '.join(output_layer_names)))
 
     @staticmethod
-    def _get_names_of_inputs_to_last_layer(symbol_dict, last_layer_name):
+    def _get_node_ids_of_inputs_to_layer(symbol_dict, node_idx):
         """
         Get the names of the layers that are inputs to the last layer.
         """
-        # Get index of node for last layer
-        for last_layer_idx, node in enumerate(symbol_dict[consts.NODES]):
-            if node[consts.NAME] == last_layer_name:
-                break
+        # Assert node_idx refers to an operation
+        assert symbol_dict[consts.NODES][node_idx][consts.OPERATION] != consts.NO_OP,\
+            'node_idx: {} does not refer to a layer'.format(node_idx)
 
-        # Get list of inputs to last layer
-        last_layer_inputs = []
-        for i in symbol_dict[consts.NODES][last_layer_idx][consts.INPUTS]:
-            last_layer_inputs.append(i[0])
+        # Get list of layer inputs to layer
+        layer_inputs = []
+        for i in symbol_dict[consts.NODES][node_idx][consts.INPUTS]:
+            layer_inputs.append(i[0])
 
-        # Remove any nodes that have empty input from last_layer_inputs list to filter out null nodes
-        filtered_last_layer_inputs = []
-        for i in last_layer_inputs:
-            if symbol_dict[consts.NODES][i][consts.INPUTS] != []:
-                filtered_last_layer_inputs.append(i)
-
-        layer_names = []
-        for idx, node in enumerate(symbol_dict[consts.NODES]):
-            if idx in filtered_last_layer_inputs:
-                layer_names.append(node[consts.NAME])
-        return layer_names
+        # Filter out null nodes
+        filtered_layer_inputs = []
+        for i in layer_inputs:
+            if symbol_dict[consts.NODES][i][consts.OPERATION] != consts.NO_OP:
+                filtered_layer_inputs.append(i)
+        return filtered_layer_inputs
 
     @staticmethod
     def _ambiguous_layer_drop_error_message(layer_names, n):
@@ -458,20 +456,6 @@ class ModelHandler(object):
         """
         return 'Found an ambiguous layer (drop layer number: {}). Please choose one from: {}'\
             .format(n, ', '.join(layer_names))
-
-    @staticmethod
-    def _get_layer_names_with_node_zero_as_input(nodes):
-        """
-        Get list of names of layers that have the zeroth node as an input.
-        """
-        layer_names = []
-        for node in nodes:
-            for input in node[consts.INPUTS]:
-                if input[0] == 0:
-                    layer_names.append(node[consts.NAME])
-                    # Avoid counting twice in the case where a node has two inputs from 0 node
-                    break
-        return layer_names
 
     @staticmethod
     def _get_layer_ids_with_node_zero_as_input(nodes):
