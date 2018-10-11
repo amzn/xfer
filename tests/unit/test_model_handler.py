@@ -144,10 +144,48 @@ class TestModelHandler(TestCase):
             mh.drop_layer_top()
 
         with self.assertLogs() as cm:
-            mh.drop_layer_top(branch_to_keep=['a_3'])
+            mh.drop_layer_top(keep_branch_names=['a_3'])
         assert cm.output == ['INFO:root:{} deleted from model top'.format(plus_layer_name)]
 
         assert mh.layer_names == ['flatten0', 'a_1', 'a_2', 'a_3']
+
+    def test_drop_layer_top_split_3(self):
+        mh, plus_layer_name = self._build_split_net()
+        assert mh.layer_names == ['flatten0', 'a_1', 'a_2', 'a_3', 'b_1', 'b_2', plus_layer_name, 'softmax']
+
+        with self.assertLogs() as cm:
+            mh.drop_layer_top(3, keep_branch_names=['a_3'])
+        print(cm.output)
+        assert cm.output == ['INFO:root:softmax, _plus5, a_3 deleted from model top']
+
+        assert mh.layer_names == ['flatten0', 'a_1', 'a_2']
+
+        with self.assertRaises(exceptions.ModelError):
+            mh.drop_layer_top(3)
+
+    def test_drop_layer_top_incorrect_keep_branch_names(self):
+        mh, plus_layer_name = self._build_split_net()
+        mh.drop_layer_top()
+
+        with self.assertRaises(exceptions.ModelError):
+            mh.drop_layer_top(keep_branch_names=['false_layer_name'])
+
+    def test_drop_layer_top_redundant_keep_branch_names(self):
+        with self.assertLogs() as cm:
+            self.mh.drop_layer_top(keep_branch_names=['a_3'])
+
+        assert cm.output == ['INFO:root:softmaxoutput1 deleted from model top',
+                             'WARNING:root:Did not use all of keep_branch_names: a_3']
+
+    def test_drop_layer_top_too_many_keep_branch_names(self):
+        mh, plus_layer_name = self._build_split_net()
+        mh.drop_layer_top()
+
+        with self.assertLogs() as cm:
+            mh.drop_layer_top(keep_branch_names=['a_3', 'a_4'])
+
+        assert cm.output == ['INFO:root:{} deleted from model top'.format(plus_layer_name),
+                             'WARNING:root:Did not use all of keep_branch_names: a_4']
 
     def test_drop_layer_bottom_1(self):
         assert 'conv1' in list(self.mh.layer_type_dict.keys())
@@ -321,43 +359,34 @@ class TestModelHandler(TestCase):
         # Build symbol
         data = mx.sym.Variable('data')
 
-        fc1_1 = mx.sym.FullyConnected(data=data, num_hidden=5)
-        fc1_2 = mx.sym.FullyConnected(data=data, num_hidden=5)
-        fc1_3 = mx.sym.FullyConnected(data=data, num_hidden=5)
-        fc1_4 = mx.sym.FullyConnected(data=data, num_hidden=5)
-        fc2_1 = mx.sym.FullyConnected(data=fc1_1, num_hidden=5)
-        fc2_2 = mx.sym.FullyConnected(data=fc1_2, num_hidden=5)
-        fc2_3 = mx.sym.FullyConnected(data=fc1_3, num_hidden=5)
-        fc2_4 = mx.sym.FullyConnected(data=fc1_4, num_hidden=5)
+        fc1_1 = mx.sym.FullyConnected(data=data, num_hidden=5, name='fc1_1')
+        fc1_2 = mx.sym.FullyConnected(data=data, num_hidden=5, name='fc1_2')
+        fc1_3 = mx.sym.FullyConnected(data=data, num_hidden=5, name='fc1_3')
+        fc1_4 = mx.sym.FullyConnected(data=data, num_hidden=5, name='fc1_4')
+        fc2_1 = mx.sym.FullyConnected(data=fc1_1, num_hidden=5, name='fc2_1')
+        fc2_2 = mx.sym.FullyConnected(data=fc1_2, num_hidden=5, name='fc2_2')
+        fc2_3 = mx.sym.FullyConnected(data=fc1_3, num_hidden=5, name='fc2_3')
+        fc2_4 = mx.sym.FullyConnected(data=fc1_4, num_hidden=5, name='fc2_4')
 
-        concat3_1 = mx.sym.concat(fc2_1, fc2_2)
-        concat3_2 = mx.sym.concat(fc2_3, fc2_4)
-        concat4 = mx.sym.concat(concat3_1, concat3_2)
+        concat3_1 = mx.sym.concat(fc2_1, fc2_2, name='concat3_1')
+        concat3_2 = mx.sym.concat(fc2_3, fc2_4, name='concat3_2')
+        concat4 = mx.sym.concat(concat3_1, concat3_2, name='concat4')
 
         softmax = mx.sym.SoftmaxOutput(concat4, name='softmax')
 
         mh = model_handler.ModelHandler(mx.mod.Module(softmax))
+        assert mh.layer_names == ['fc1_1', 'fc2_1', 'fc1_2', 'fc2_2', 'concat3_1', 'fc1_3', 'fc2_3', 'fc1_4', 'fc2_4',
+                                  'concat3_2', 'concat4', 'softmax']
 
-        assert mh.layer_names == ['fullyconnected0', 'fullyconnected4', 'fullyconnected1', 'fullyconnected5', 'concat0',
-                                  'fullyconnected2', 'fullyconnected6', 'fullyconnected3', 'fullyconnected7', 'concat1',
-                                  'concat2', 'softmax']
-
-        mh.drop_layer_bottom(num_layers_to_drop=2, drop_layer_names=['fullyconnected0', 'fullyconnected4'])
-
-        print(mh.layer_names)
-        assert mh.layer_names == ['fullyconnected1', 'fullyconnected5', 'fullyconnected2', 'fullyconnected6',
-                                  'fullyconnected3', 'fullyconnected7', 'concat1', 'concat2', 'softmax']
-
-        mh.drop_layer_bottom(num_layers_to_drop=2, drop_layer_names=['fullyconnected1', 'fullyconnected5'])
-
-        print(mh.layer_names)
-        assert mh.layer_names == ['fullyconnected2', 'fullyconnected6', 'fullyconnected3', 'fullyconnected7', 'concat1',
+        mh.drop_layer_bottom(num_layers_to_drop=2, drop_layer_names=['fc1_1', 'fc2_1'])
+        assert mh.layer_names == ['fc1_2', 'fc2_2', 'fc1_3', 'fc2_3', 'fc1_4', 'fc2_4', 'concat3_2', 'concat4',
                                   'softmax']
 
-        mh.drop_layer_bottom(num_layers_to_drop=2, drop_layer_names=['fullyconnected2', 'fullyconnected6'])
+        mh.drop_layer_bottom(num_layers_to_drop=2, drop_layer_names=['fc1_2', 'fc2_2'])
+        assert mh.layer_names == ['fc1_3', 'fc2_3', 'fc1_4', 'fc2_4', 'concat3_2', 'softmax']
 
-        print(mh.layer_names)
-        assert mh.layer_names == ['fullyconnected3', 'fullyconnected7', 'softmax']
+        mh.drop_layer_bottom(num_layers_to_drop=2, drop_layer_names=['fc1_3', 'fc2_3'])
+        assert mh.layer_names == ['fc1_4', 'fc2_4', 'softmax']
 
     def test_add_layer_top(self):
         # Drop output layer so that layers can be added to top
@@ -404,6 +433,12 @@ class TestModelHandler(TestCase):
             assert layer_name in list(self.mh.layer_type_dict.keys())
         assert outputs_post == outputs_pre + ['fc1_weight', 'fc1_bias', 'fc1_output', 'conv1_1_weight', 'conv1_1_bias',
                                               'conv1_1_output']
+
+    def test_add_layer_top_over_output(self):
+        # Assert model error raised when a layer is added above an output layer
+        layer = mx.sym.FullyConnected(num_hidden=5)
+        with self.assertRaises(exceptions.ModelError):
+            self.mh.add_layer_top(layer)
 
     def test_add_layer_bottom(self):
         layer1 = mx.sym.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)

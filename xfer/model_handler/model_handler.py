@@ -44,12 +44,12 @@ class ModelHandler(object):
         self.devices = self._get_devices(context_function, num_devices)
         self.data_name = data_name
 
-    def drop_layer_top(self, num_layers_to_drop=1, branch_to_keep=None):
+    def drop_layer_top(self, num_layers_to_drop=1, keep_branch_names=None):
         """
         Remove layers from output of model.
 
         :param int n: Number of layers to remove from model output.
-        :param list[str] branch_to_keep: In cases where the top layer is ambiguous because there are branches, this
+        :param list[str] keep_branch_names: In cases where the top layer is ambiguous because there are branches, this
                                          should contain the name of the top layer of the branch to keep.
         """
         sym = self.symbol
@@ -57,9 +57,9 @@ class ModelHandler(object):
         self._assert_drop_layer_valid(num_layers_to_drop)
         self._assert_model_has_single_output(self._get_symbol_dict(sym))
 
-        # If branch_to_keep is not a list it can cause unexpected behaviour
-        if branch_to_keep is not None:
-            assert type(branch_to_keep) == list, 'branch_to_keep must be a list of strings'
+        # If keep_branch_names is not a list it can cause unexpected behaviour
+        if keep_branch_names is not None:
+            assert type(keep_branch_names) == list, 'keep_branch_names must be a list of strings'
 
         layers_dropped = []
         for n in range(num_layers_to_drop):
@@ -72,7 +72,7 @@ class ModelHandler(object):
             last_layer_input_names = [v[consts.NAME] for c, v in enumerate(symbol_dict[consts.NODES])
                                       if c in last_layer_input_ids]
 
-            new_last_layer = self._get_relevant_layer_name_ambiguous(last_layer_input_names, branch_to_keep, n)
+            new_last_layer = self._get_relevant_layer_name_ambiguous(last_layer_input_names, keep_branch_names, n)
 
             # If case is not ambiguous then new last layer is simply the penultimate layer
             if new_last_layer is None:
@@ -89,9 +89,9 @@ class ModelHandler(object):
             sym = sym.get_internals()[new_last_layer + consts.OUTPUT]
 
         logging.info('{} deleted from model top'.format(', '.join(layers_dropped)))
-        if branch_to_keep is not None:
-            if len(branch_to_keep) > 0:
-                logging.warning('Did not use all of branch_to_keep: {}'.format(', '.join(branch_to_keep)))
+        if keep_branch_names is not None:
+            if len(keep_branch_names) > 0:
+                logging.warning('Did not use all of keep_branch_names: {}'.format(', '.join(keep_branch_names)))
         self.update_sym(sym)
 
     def drop_layer_bottom(self, num_layers_to_drop=1, drop_layer_names=None):
