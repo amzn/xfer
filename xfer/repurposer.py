@@ -128,7 +128,7 @@ class Repurposer:
         :param str model_directory: File directory to save repurposer in.
         :param boolean save_source_model: Flag to choose whether to save repurposer source model.
                                           Will use default if set to None. (MetaModelRepurposer default: True,
-                                          NeuralNetworkRepurposer: False)
+                                          NeuralNetworkRepurposer default: False)
         """
         # Assert repurpose() has been called successfully
         if self.target_model is None:

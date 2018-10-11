@@ -12,7 +12,7 @@
 #   permissions and limitations under the License.
 # ==============================================================================
 """
-Layer classes for adding new layers to models
+Layer classes for adding new layers to models.
 """
 
 import ast
