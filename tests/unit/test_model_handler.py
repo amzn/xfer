@@ -564,12 +564,25 @@ class TestModelHandler(TestCase):
         name = self.mh._get_name_of_first_operation(self.symbol_dict['nodes'])
         assert name == 'conv1'
 
+    def test_get_name_of_first_operation_no_ops(self):
+        for node in self.symbol_dict['nodes']:
+            node['op'] = 'null'
+        with self.assertRaises(exceptions.ModelError):
+            self.mh._get_name_of_first_operation(self.symbol_dict['nodes'])
+
     def test_get_idx_of_first_node_of_layer(self):
         assert self.mh._get_idx_of_first_node_of_layer(3, self.arg_nodes) == 1
         assert self.mh._get_idx_of_first_node_of_layer(4, self.arg_nodes) == 4
         assert self.mh._get_idx_of_first_node_of_layer(7, self.arg_nodes) == 5
         assert self.mh._get_idx_of_first_node_of_layer(10, self.arg_nodes) == 10
         assert self.mh._get_idx_of_first_node_of_layer(15, self.arg_nodes) == 14
+
+    def test_get_layer_node_idx(self):
+        idx = self.mh._get_layer_node_idx(self.symbol_dict['nodes'], 'fullyconnected0')
+        assert idx == 13
+
+        with self.assertRaises(ValueError):
+            self.mh._get_layer_node_idx(self.symbol_dict['nodes'], 'nonexistentlayer')
 
     def test_delete_layer_nodes_given_operator_node(self):
         original_length = len(self.nodes)

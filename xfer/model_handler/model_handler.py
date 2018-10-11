@@ -125,9 +125,7 @@ class ModelHandler(object):
             layers_dropped.append(drop_layer_name)
 
             # Find node index of operator being deleted
-            for del_node_op_idx, node in enumerate(symbol_dict[consts.NODES]):
-                if node[consts.NAME] == drop_layer_name:
-                    break
+            del_node_op_idx = self._get_layer_node_idx(symbol_dict[consts.NODES], drop_layer_name)
             symbol_dict = self._delete_layer_nodes_given_operator_node(symbol_dict, del_node_op_idx)
 
             symbol_dict, join_idx, join_deleted, join_layer_name = self._remove_redundant_join_layer(
@@ -221,6 +219,16 @@ class ModelHandler(object):
         self.update_sym(sym)
         logging.info('Added {} to model bottom'.format(', '.join(added_layer_names)))
 
+    @staticmethod
+    def _get_layer_node_idx(nodes, layer_name):
+        layer_node_idx = None
+        for idx, node in enumerate(nodes):
+            if node[consts.NAME] == layer_name:
+                layer_node_idx = idx
+        if layer_node_idx is None:
+            raise ValueError("No node with name matching '{}'".format(layer_name))
+        return layer_node_idx
+
     def _remove_redundant_join_layer(self, symbol_dict, drop_layer_name, nodes_before, deleted_node_operator_idx):
         """
         Remove a joining layer if it only has a single input and is therefore useless.
@@ -286,18 +294,21 @@ class ModelHandler(object):
         for node in nodes:
             if node[consts.OPERATION] != consts.NO_OP:
                 return node[consts.NAME]
+        raise exceptions.ModelError('nodes does not contain any operation nodes')
 
     @staticmethod
     def _get_idx_of_first_node_of_layer(operation_idx, arg_nodes):
         """
         Return the index of the first node of a layer given the index of the operation node of the layer and arg_nodes.
         """
-        for first_idx in reversed(range(operation_idx + 1)):  # +1 because range(a,b) doesn't include b
+        first_node_idx = None
+        for node_idx in reversed(range(min(arg_nodes), operation_idx + 1)):  # +1 because range(a,b) doesn't include b
             # -1 because the first index is the index before the first that doesn't appear in arg nodes
             # Do not want to delete input (node 0)
-            if (first_idx - 1) not in arg_nodes or (first_idx - 1) == 0:
+            if (node_idx - 1) not in arg_nodes or (node_idx - 1) == 0:
+                first_node_idx = node_idx
                 break
-        return first_idx
+        return first_node_idx
 
     def _delete_layer_nodes_given_operator_node(self, symbol_dict, node_idx):
         """
