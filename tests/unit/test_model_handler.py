@@ -774,19 +774,19 @@ class TestModelHandler(TestCase):
             self.mh.get_layer_type('fake_layer_name')
 
     def test_get_layer_names_matching_type(self):
-        layers_found = self.mh.get_layer_names_matching_type(consts.LayerType.CONVOLUTION)
+        layers_found = self.mh.get_layer_names_matching_type('CONVOLUTION')
         assert sorted(layers_found) == sorted(['conv1', 'conv2'])
-        layers_found = self.mh.get_layer_names_matching_type(consts.LayerType.ACTIVATION)
+        layers_found = self.mh.get_layer_names_matching_type('activation')
         assert sorted(layers_found) == sorted(['act1', 'act2'])
-        layers_found = self.mh.get_layer_names_matching_type(consts.LayerType.POOLING)
+        layers_found = self.mh.get_layer_names_matching_type('Pooling')
         assert layers_found == ['pool1']
-        layers_found = self.mh.get_layer_names_matching_type(consts.LayerType.FLATTEN)
+        layers_found = self.mh.get_layer_names_matching_type('flatten')
         assert layers_found == ['flatten1']
-        layers_found = self.mh.get_layer_names_matching_type(consts.LayerType.FULLYCONNECTED)
+        layers_found = self.mh.get_layer_names_matching_type('fullyconnected')
         assert layers_found == ['fullyconnected0']
-        layers_found = self.mh.get_layer_names_matching_type(consts.LayerType.SOFTMAXOUTPUT)
+        layers_found = self.mh.get_layer_names_matching_type('SoftmaxOutput')
         assert layers_found == ['softmaxoutput1']
-        layers_found = self.mh.get_layer_names_matching_type(consts.LayerType.BATCHNORM)
+        layers_found = self.mh.get_layer_names_matching_type('BatchNorm')
         assert layers_found == []
 
     def _test_get_layer_output_image_iterator(self, batch_size):

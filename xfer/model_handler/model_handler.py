@@ -563,11 +563,12 @@ class ModelHandler(object):
         """
         Return names of layers of specified type.
 
-        :param LayerType layer_type: Return list of layers of this type. Should be a LayerType enum.
+        :param str layer_type: Return list of layers of this type.
         :return: Names of layers with specified type
         :rtype: list(str)
         """
-        return [layer_name for layer_name, l_type in self.layer_type_dict.items() if l_type == layer_type.value]
+        return [layer_name for layer_name, l_type in self.layer_type_dict.items()
+                if l_type.lower() == layer_type.lower()]
 
     def get_layer_output(self, data_iterator, layer_names):
         """
