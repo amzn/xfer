@@ -130,7 +130,7 @@ class ModelHandler(object):
                     break
             symbol_dict = self._delete_layer_nodes_given_operator_node(symbol_dict, del_node_op_idx)
 
-            symbol_dict, join_idx, join_deleted, join_layer_name = self._remove_join_layer_if_redundant(
+            symbol_dict, join_idx, join_deleted, join_layer_name = self._remove_redundant_join_layer(
                                                                     symbol_dict, drop_layer_name,
                                                                     temp_symbol_dict[consts.NODES], del_node_op_idx)
             if join_deleted:
@@ -221,7 +221,7 @@ class ModelHandler(object):
         self.update_sym(sym)
         logging.info('Added {} to model bottom'.format(', '.join(added_layer_names)))
 
-    def _remove_join_layer_if_redundant(self, symbol_dict, drop_layer_name, nodes_before, deleted_node_operator_idx):
+    def _remove_redundant_join_layer(self, symbol_dict, drop_layer_name, nodes_before, deleted_node_operator_idx):
         """
         Remove a joining layer if it only has a single input and is therefore useless.
         """
@@ -234,8 +234,8 @@ class ModelHandler(object):
         # If more than one node had zero as input there may be a join layer than needs deleting
         if len(nodes_using_zero_ids) > 1:
             # Find joining node index
-            join_idx = self._get_join_idx(nodes_using_zero_ids, symbol_dict[consts.NODES],
-                                          nodes_before, drop_layer_name)
+            join_idx = self._get_join_idx(nodes_using_zero_ids, symbol_dict[consts.NODES], nodes_before,
+                                          drop_layer_name)
             # Delete input to join layer from deleted layer if it is there
             if [deleted_node_operator_idx, 0, 0] in symbol_dict[consts.NODES][join_idx][consts.INPUTS]:
                 symbol_dict[consts.NODES][join_idx][consts.INPUTS].remove([deleted_node_operator_idx, 0, 0])
@@ -246,14 +246,14 @@ class ModelHandler(object):
                 join_deleted = True
                 join_layer_name = symbol_dict[consts.NODES][join_idx][consts.NAME]
                 logging.info('Dropping {} (join node auto-deleted)'.format(join_layer_name))
-                input_of_join = symbol_dict[consts.NODES][join_idx][consts.INPUTS][0]
+                join_input = symbol_dict[consts.NODES][join_idx][consts.INPUTS][0]
                 # Delete join nodes
                 symbol_dict = self._delete_layer_nodes_given_operator_node(symbol_dict, join_idx)
-                # Replace parent of join with former child of join
+                # Replace output of join with former input of join
                 for i, node in enumerate(symbol_dict[consts.NODES]):
                     for j, input_list in enumerate(node[consts.INPUTS]):
                         if input_list[0] == join_idx:
-                            symbol_dict[consts.NODES][i][consts.INPUTS][j] = input_of_join
+                            symbol_dict[consts.NODES][i][consts.INPUTS][j] = join_input
 
         return symbol_dict, join_idx, join_deleted, join_layer_name
 
