@@ -481,20 +481,15 @@ class ModelHandler(object):
         for drop_layer_idx, node in enumerate(nodes_before_layer_deleted):
             if node[consts.NAME] == drop_layer_name:
                 break
-        # Create dictionary with key for each node using zero input
-        parents = {}
-        for n in nodes_using_zero_ids:
-            parents[n] = []
-        # Loop until join node found
-        found = False
-        current_interest_nodes = None
+        # Create dictionary with key for each node using zeroth node as input
+        parents = {node_idx: [] for node_idx in nodes_using_zero_ids}
         # We want to find the nodes with nodes_using_zero_ids as input
         next_interest_nodes = nodes_using_zero_ids
-        while not found:
+        while True:
             # Update interest nodes
             current_interest_nodes = next_interest_nodes
             next_interest_nodes = []
-            # Loop through nodes
+            # Loop through original nodes
             for idx, node in enumerate(nodes_before_layer_deleted):
                 for i in node[consts.INPUTS]:
                     # If input is in interest nodes then add it to the parent dictionary with the key being the
@@ -505,30 +500,22 @@ class ModelHandler(object):
                                 parents[key].append(idx)
                         # Add any newly found parent nodes to be the next interest nodes
                         next_interest_nodes.append(idx)
-            value_list = list(parents.values())
-            # Find nodes that appear in all lists
-            intersection = set(value_list[0]).intersection(*value_list)  # Find intersection for all
-            # Find intersection for at least 2
+            # Find intersection with dropped layer parent list and other parent lists
             intersection = []
-            for k1, v1, in parents.items():
-                if k1 != drop_layer_idx:
+            for k, v in parents.items():
+                if k == drop_layer_idx:
                     continue
-                for k2, v2 in parents.items():
-                    if k1 == k2:
-                        continue
-                    intersection_local = set(v1).intersection(v2)
-                    for k in intersection_local:
-                        intersection.append(k)
+                intersection = intersection + list(set(parents[drop_layer_idx]).intersection(v))
             if len(intersection) > 0:
                 break
 
         # The first node they have in common is the join node
         join_idx = min(list(intersection))
-        join_name = nodes_before_layer_deleted[join_idx][consts.NAME]
 
-        for idx, node in enumerate(nodes):
+        join_name = nodes_before_layer_deleted[join_idx][consts.NAME]
+        # Get node index in current node list
+        for join_idx, node in enumerate(nodes):
             if node[consts.NAME] == join_name:
-                join_idx = idx
                 break
         return join_idx
 
