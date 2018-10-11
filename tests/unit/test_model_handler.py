@@ -110,19 +110,19 @@ class TestModelHandler(TestCase):
 
     def test_drop_layer_top_two_outputs(self):
         # Build a symbol with two softmax output layers
-        data = mx.symbol.Variable('data')
-        fc1 = mx.symbol.FullyConnected(data=data, name='fc1', num_hidden=128)
-        act1 = mx.symbol.Activation(data=fc1, name='relu1', act_type="relu")
-        fc2 = mx.symbol.FullyConnected(data=act1, name='fc2', num_hidden=64)
-        act2 = mx.symbol.Activation(data=fc2, name='relu2', act_type="relu")
-        fc3 = mx.symbol.FullyConnected(data=act2, name='fc3', num_hidden=10)
+        data = mx.sym.Variable('data')
+        fc1 = mx.sym.FullyConnected(data=data, name='fc1', num_hidden=128)
+        act1 = mx.sym.Activation(data=fc1, name='relu1', act_type="relu")
+        fc2 = mx.sym.FullyConnected(data=act1, name='fc2', num_hidden=64)
+        act2 = mx.sym.Activation(data=fc2, name='relu2', act_type="relu")
+        fc3 = mx.sym.FullyConnected(data=act2, name='fc3', num_hidden=10)
 
         fc4 = mx.sym.FullyConnected(data=fc3, name='fc4_1', num_hidden=10)
-        sm1 = mx.symbol.SoftmaxOutput(data=fc4, name='softmax1')
+        sm1 = mx.sym.SoftmaxOutput(data=fc4, name='softmax1')
         fc5 = mx.sym.FullyConnected(data=fc3, name='fc4_2', num_hidden=10)
-        sm2 = mx.symbol.SoftmaxOutput(data=fc5, name='softmax2')
+        sm2 = mx.sym.SoftmaxOutput(data=fc5, name='softmax2')
 
-        softmax = mx.symbol.Group([sm1, sm2])
+        softmax = mx.sym.Group([sm1, sm2])
 
         mod = mx.mod.Module(softmax, label_names=['softmax1_label', 'softmax2_label'])
         mh = model_handler.ModelHandler(mod)
@@ -448,21 +448,21 @@ class TestModelHandler(TestCase):
                                 'fc1_bias', 'fc1_output'] + outputs_pre[1:]
 
     def test_assert_model_has_single_output(self):
-        data = mx.symbol.Variable('data')
-        fc1 = mx.symbol.FullyConnected(data=data, name='fc1', num_hidden=128)
-        act1 = mx.symbol.Activation(data=fc1, name='relu1', act_type="relu")
-        fc2 = mx.symbol.FullyConnected(data=act1, name='fc2', num_hidden=64)
-        act2 = mx.symbol.Activation(data=fc2, name='relu2', act_type="relu")
-        fc3 = mx.symbol.FullyConnected(data=act2, name='fc3', num_hidden=10)
+        data = mx.sym.Variable('data')
+        fc1 = mx.sym.FullyConnected(data=data, name='fc1', num_hidden=128)
+        act1 = mx.sym.Activation(data=fc1, name='relu1', act_type="relu")
+        fc2 = mx.sym.FullyConnected(data=act1, name='fc2', num_hidden=64)
+        act2 = mx.sym.Activation(data=fc2, name='relu2', act_type="relu")
+        fc3 = mx.sym.FullyConnected(data=act2, name='fc3', num_hidden=10)
         fc4 = mx.sym.FullyConnected(data=fc3, name='fc4_1', num_hidden=10)
-        sm1 = mx.symbol.SoftmaxOutput(data=fc4, name='softmax1')
+        sm1 = mx.sym.SoftmaxOutput(data=fc4, name='softmax1')
         fc5 = mx.sym.FullyConnected(data=fc3, name='fc4_2', num_hidden=10)
-        sm2 = mx.symbol.SoftmaxOutput(data=fc5, name='softmax2')
-        sm3 = mx.symbol.SoftmaxOutput(data=fc2, name='softmax3')
+        sm2 = mx.sym.SoftmaxOutput(data=fc5, name='softmax2')
+        sm3 = mx.sym.SoftmaxOutput(data=fc2, name='softmax3')
 
         output_1 = sm1
-        output_2 = mx.symbol.Group([sm1, sm2])
-        output_3 = mx.symbol.Group([sm1, sm2, sm3])
+        output_2 = mx.sym.Group([sm1, sm2])
+        output_3 = mx.sym.Group([sm1, sm2, sm3])
 
         self.mh._assert_model_has_single_output(self.mh._get_symbol_dict(output_1))
         with self.assertRaises(exceptions.ModelError):
@@ -478,12 +478,12 @@ class TestModelHandler(TestCase):
         assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 15) == [13]
 
     def test_get_node_ids_of_inputs_to_layer_split_2(self):
-        data = mx.symbol.Variable('data')
-        fc1 = mx.symbol.FullyConnected(data=data, name='fc1', num_hidden=128)
-        act1 = mx.symbol.Activation(data=fc1, name='relu1', act_type="relu")
-        fc2 = mx.symbol.FullyConnected(data=act1, name='fc2', num_hidden=64)
-        act2 = mx.symbol.Activation(data=fc2, name='relu2', act_type="relu")
-        fc3 = mx.symbol.FullyConnected(data=act2, name='fc3', num_hidden=10)
+        data = mx.sym.Variable('data')
+        fc1 = mx.sym.FullyConnected(data=data, name='fc1', num_hidden=128)
+        act1 = mx.sym.Activation(data=fc1, name='relu1', act_type="relu")
+        fc2 = mx.sym.FullyConnected(data=act1, name='fc2', num_hidden=64)
+        act2 = mx.sym.Activation(data=fc2, name='relu2', act_type="relu")
+        fc3 = mx.sym.FullyConnected(data=act2, name='fc3', num_hidden=10)
         plus = fc2.__add__(fc3)
 
         symbol_dict = self.mh._get_symbol_dict(plus)
@@ -493,13 +493,13 @@ class TestModelHandler(TestCase):
         assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 12) == [7, 11]
 
     def test_get_node_ids_of_inputs_to_layer_split_3(self):
-        data = mx.symbol.Variable('data')
-        fc1 = mx.symbol.FullyConnected(data=data, name='fc1', num_hidden=128)
-        act1 = mx.symbol.Activation(data=fc1, name='relu1', act_type="relu")
-        fc2 = mx.symbol.FullyConnected(data=act1, name='fc2', num_hidden=64)
-        act2 = mx.symbol.Activation(data=fc2, name='relu2', act_type="relu")
-        fc3 = mx.symbol.FullyConnected(data=act2, name='fc3', num_hidden=10)
-        concat = mx.symbol.concat(fc1, fc2, fc3, name='concat1')
+        data = mx.sym.Variable('data')
+        fc1 = mx.sym.FullyConnected(data=data, name='fc1', num_hidden=128)
+        act1 = mx.sym.Activation(data=fc1, name='relu1', act_type="relu")
+        fc2 = mx.sym.FullyConnected(data=act1, name='fc2', num_hidden=64)
+        act2 = mx.sym.Activation(data=fc2, name='relu2', act_type="relu")
+        fc3 = mx.sym.FullyConnected(data=act2, name='fc3', num_hidden=10)
+        concat = mx.sym.concat(fc1, fc2, fc3, name='concat1')
 
         symbol_dict = self.mh._get_symbol_dict(concat)
 
@@ -577,7 +577,7 @@ class TestModelHandler(TestCase):
         assert self.mh._get_heads(self.nodes[-11:], 'softmaxoutput1') == [[10, 0, 0]]
         assert self.mh._get_heads(self.nodes[-7:], 'softmaxoutput1') == [[6, 0, 0]]
 
-    def test_get_string_input_map(self):
+    def test_get_name_input_map(self):
         expected_output = {'conv2': ['act1', 'conv2_weight', 'conv2_bias'], 'flatten1': ['pool1'], 'conv1_bias': [],
                            'softmaxoutput1_label': [],
                            'fullyconnected0': ['flatten1', 'fullyconnected0_weight', 'fullyconnected0_bias'],
@@ -586,7 +586,7 @@ class TestModelHandler(TestCase):
                            'conv1': ['data', 'conv1_weight', 'conv1_bias'], 'fullyconnected0_weight': [],
                            'conv2_bias': [], 'act1': ['conv1'], 'conv1_weight': []}
 
-        assert self.mh._get_string_input_map(self.nodes) == expected_output
+        assert self.mh._get_name_input_map(self.nodes) == expected_output
 
     def test_update_inputs(self):
         nodes = self.nodes[-12:]
@@ -604,19 +604,19 @@ class TestModelHandler(TestCase):
     def test_get_output_layer_names(self):
         self.mh._get_output_layer_names(self.nodes, self.heads) == ['softmaxoutput1']
 
-        data = mx.symbol.Variable('data')
-        fc1 = mx.symbol.FullyConnected(data=data, name='fc1', num_hidden=128)
-        act1 = mx.symbol.Activation(data=fc1, name='relu1', act_type="relu")
-        fc2 = mx.symbol.FullyConnected(data=act1, name='fc2', num_hidden=64)
-        act2 = mx.symbol.Activation(data=fc2, name='relu2', act_type="relu")
-        fc3 = mx.symbol.FullyConnected(data=act2, name='fc3', num_hidden=10)
+        data = mx.sym.Variable('data')
+        fc1 = mx.sym.FullyConnected(data=data, name='fc1', num_hidden=128)
+        act1 = mx.sym.Activation(data=fc1, name='relu1', act_type="relu")
+        fc2 = mx.sym.FullyConnected(data=act1, name='fc2', num_hidden=64)
+        act2 = mx.sym.Activation(data=fc2, name='relu2', act_type="relu")
+        fc3 = mx.sym.FullyConnected(data=act2, name='fc3', num_hidden=10)
         fc4 = mx.sym.FullyConnected(data=fc3, name='fc4_1', num_hidden=10)
-        sm1 = mx.symbol.SoftmaxOutput(data=fc4, name='softmax1')
+        sm1 = mx.sym.SoftmaxOutput(data=fc4, name='softmax1')
         fc5 = mx.sym.FullyConnected(data=fc3, name='fc4_2', num_hidden=10)
-        sm2 = mx.symbol.SoftmaxOutput(data=fc5, name='softmax2')
-        sm3 = mx.symbol.SoftmaxOutput(data=fc2, name='softmax3')
+        sm2 = mx.sym.SoftmaxOutput(data=fc5, name='softmax2')
+        sm3 = mx.sym.SoftmaxOutput(data=fc2, name='softmax3')
 
-        outputs = [sm1, mx.symbol.Group([sm1, sm2]), mx.symbol.Group([sm1, sm2, sm3])]
+        outputs = [sm1, mx.sym.Group([sm1, sm2]), mx.sym.Group([sm1, sm2, sm3])]
         output_names = [['softmax1'], ['softmax1', 'softmax2'], ['softmax1', 'softmax2', 'softmax3']]
 
         for output, output_name in zip(outputs, output_names):
@@ -625,13 +625,13 @@ class TestModelHandler(TestCase):
 
     @staticmethod
     def _build_symbol_with_nodes_with_zero_input():
-        data = mx.symbol.Variable('data')
-        fc1a = mx.symbol.FullyConnected(data=data, name='fc1a', num_hidden=128)
-        act1a = mx.symbol.Activation(data=fc1a, name='relu1a', act_type="relu")
-        fc1b = mx.symbol.FullyConnected(data=data, name='fc1b', num_hidden=64)
-        act1b = mx.symbol.Activation(data=fc1b, name='relu1b', act_type="relu")
+        data = mx.sym.Variable('data')
+        fc1a = mx.sym.FullyConnected(data=data, name='fc1a', num_hidden=128)
+        act1a = mx.sym.Activation(data=fc1a, name='relu1a', act_type="relu")
+        fc1b = mx.sym.FullyConnected(data=data, name='fc1b', num_hidden=64)
+        act1b = mx.sym.Activation(data=fc1b, name='relu1b', act_type="relu")
         plus = act1a.__add__(act1b)
-        softmax = mx.symbol.SoftmaxOutput(data=plus, name='softmax')
+        softmax = mx.sym.SoftmaxOutput(data=plus, name='softmax')
         return softmax
 
     def test_get_layer_ids_with_node_zero_as_input(self):

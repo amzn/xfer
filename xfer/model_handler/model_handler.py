@@ -263,7 +263,6 @@ class ModelHandler(object):
         is provided in reference layer names and return relevant layer.
         """
         relevant_layer_name = None
-
         # If there are multiple available layers then this is an ambiguous case. So the first item in reference layer
         # names is used to disambiguate.
         if len(available_layer_names) > 1:
@@ -335,7 +334,7 @@ class ModelHandler(object):
         return heads
 
     @staticmethod
-    def _get_string_input_map(nodes):
+    def _get_name_input_map(nodes):
         """
         Get dictionary {layer name: [input layer names]} from nodes list.
         """
@@ -350,13 +349,12 @@ class ModelHandler(object):
         """
         Return the nodes list with correct input values.
         """
-        string_input_map = self._get_string_input_map(original_nodes)
-        num_nodes_with_zero_as_input = len(self._get_layer_ids_with_node_zero_as_input(original_nodes))
+        name_input_map = self._get_name_input_map(original_nodes)
         # Get original index of dropped layer
         for drop_layer_original_idx, node in enumerate(original_nodes):
             if node[consts.NAME] == drop_layer_name:
                 break
-        # Check if drop layer was originally an input to the join layer
+        # Check if dropped layer was originally an input to the join layer
         drop_layer_input_to_join = False
         if join_idx is not None:
             # Get join index for original nodes
@@ -366,41 +364,32 @@ class ModelHandler(object):
             for i in original_nodes[join_idx_original][consts.INPUTS]:
                 if i[0] == drop_layer_original_idx:
                     drop_layer_input_to_join = True
-        # If more than one node has zero as input then we don't want to transfer the input of the dropped layer
-        # We only want to ignore an input if a join was deleted
-        if num_nodes_with_zero_as_input > 1 and join_deleted:
-            nodes_not_use_input = [drop_layer_name]
-        elif drop_layer_input_to_join:
-            nodes_not_use_input = [drop_layer_name]
-        else:
-            nodes_not_use_input = []
-        # Generate name to idx mapping
-        name2idx = {}
-        for idx, node in enumerate(nodes):
-            name2idx[node[consts.NAME]] = idx
-
+                    break
+        # We only want to ignore an input if a join was deleted or the dropped layer was the input to a join layer
+        skip_inputs = []
+        if join_deleted or drop_layer_input_to_join:
+            skip_inputs = [drop_layer_name]
+        name2idx = {node[consts.NAME]: idx for idx, node in enumerate(nodes)}  # Generate name to idx mapping
         for node_id, node in enumerate(nodes):
+            # If node has no inputs then skip it
             if len(node[consts.INPUTS]) == 0:
                 continue
-            temp_inputs = string_input_map[node[consts.NAME]]
-            set_temp_inputs = set(temp_inputs)
+            inputs = name_input_map[node[consts.NAME]]
+            inputs_set = set(inputs)
             available_layers = list(name2idx.keys())
+            # Continue to loop until the input names are all in the list of available layers
+            while not inputs_set.issubset(available_layers):
+                unavailable_inputs = [i for i in inputs if i not in available_layers]
+                replacement_inputs = []
+                # Replace unavailable nodes with their inputs unless in skip_inputs
+                for unavailable_input in unavailable_inputs:
+                    replacement_inputs = replacement_inputs + [i for i in name_input_map[unavailable_input]
+                                                               if i not in skip_inputs]
+                inputs = [i for i in inputs if i in available_layers] + replacement_inputs
+                inputs_set = set(inputs)
 
-            while not set_temp_inputs.issubset(available_layers):
-                for i, temp_input in enumerate(temp_inputs):
-                    if temp_input not in list(name2idx.keys()):
-                        temp_inputs.remove(temp_input)
-                        if temp_input in nodes_not_use_input:
-                            continue
-                        for temp_input_name in reversed(string_input_map[temp_input]):
-                            temp_inputs.insert(i, temp_input_name)
-
-                set_temp_inputs = set(temp_inputs)
-
-            temp_inputs = [name2idx[name] for name in temp_inputs]
-
-            nodes[node_id][consts.INPUTS] = [[temp_input, 0, 0] for temp_input in temp_inputs]
-
+            inputs = sorted([name2idx[name] for name in inputs])
+            nodes[node_id][consts.INPUTS] = [[i, 0, 0] for i in inputs]
         return nodes
 
     @staticmethod
@@ -464,8 +453,8 @@ class ModelHandler(object):
         """
         layer_ids = []
         for idx, node in enumerate(nodes):
-            for input in node[consts.INPUTS]:
-                if input[0] == 0:
+            for input_list in node[consts.INPUTS]:
+                if input_list[0] == 0:
                     layer_ids.append(idx)
                     # Avoid counting twice in the case where a node has two inputs from 0 node
                     break
