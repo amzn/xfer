@@ -402,7 +402,8 @@ class ModelHandler(object):
                 inputs_set = set(inputs)
 
             inputs = sorted([name2idx[name] for name in inputs])
-            nodes[node_id][consts.INPUTS] = [[i, 0] for i in inputs]
+            # symbol.load_json expects inputs in the form [i, 0] (1.3.x), or [i, 0, 0] (1.2.x+)
+            nodes[node_id][consts.INPUTS] = [[i, 0, 0] for i in inputs]
         return nodes
 
     @staticmethod
