@@ -343,7 +343,8 @@ class ModelHandler(object):
         heads = []
         for idx, node in enumerate(nodes):
             if node[consts.NAME] in output_layer_names:
-                heads.append([idx, 0])
+                # symbol.load_json expects heads in the form [i, 0] (1.3.x), or [i, 0, 0] (1.2.x+)
+                heads.append([idx, 0, 0])
         return heads
 
     @staticmethod
