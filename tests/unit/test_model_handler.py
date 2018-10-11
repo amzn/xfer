@@ -621,9 +621,9 @@ class TestModelHandler(TestCase):
         assert self.mh._get_arg_nodes(nodes) == [0, 3, 4, 5]
 
     def test_get_heads(self):
-        assert self.mh._get_heads(self.nodes, 'softmaxoutput1') == [[15, 0, 0]]
-        assert self.mh._get_heads(self.nodes[-11:], 'softmaxoutput1') == [[10, 0, 0]]
-        assert self.mh._get_heads(self.nodes[-7:], 'softmaxoutput1') == [[6, 0, 0]]
+        assert self.mh._get_heads(self.nodes, 'softmaxoutput1') in [[[15, 0, 0]], [[15, 0]]]
+        assert self.mh._get_heads(self.nodes[-11:], 'softmaxoutput1') in [[[10, 0, 0]], [[10, 0]]]
+        assert self.mh._get_heads(self.nodes[-7:], 'softmaxoutput1') in [[[6, 0, 0]], [[6, 0]]]
 
     def test_get_name_input_map(self):
         expected_output = {'conv2': ['act1', 'conv2_weight', 'conv2_bias'], 'flatten1': ['pool1'], 'conv1_bias': [],
@@ -647,7 +647,12 @@ class TestModelHandler(TestCase):
                            [[6, 0, 0]], [], [], [[7, 0, 0], [8, 0, 0], [9, 0, 0]], [],  [[10, 0, 0], [11, 0, 0]]]
 
         for node, expected_input in zip(nodes, expected_inputs):
-            assert node['inputs'] == expected_input
+            if len(expected_input) == 0:
+                assert node['inputs'] == expected_input
+            else:
+                assert len(node['inputs']) == len(expected_input)
+                for i, _ in enumerate(expected_input):
+                    assert node['inputs'][i][0] == expected_input[i][0]
 
     def test_get_output_layer_names(self):
         self.mh._get_output_layer_names(self.nodes, self.heads) == ['softmaxoutput1']

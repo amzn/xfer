@@ -245,8 +245,10 @@ class ModelHandler(object):
             join_idx = self._get_join_idx(nodes_using_zero_ids, symbol_dict[consts.NODES], nodes_before,
                                           drop_layer_name)
             # Delete input to join layer from deleted layer if it is there
-            if [deleted_node_operator_idx, 0, 0] in symbol_dict[consts.NODES][join_idx][consts.INPUTS]:
-                symbol_dict[consts.NODES][join_idx][consts.INPUTS].remove([deleted_node_operator_idx, 0, 0])
+            # MXNet 1.2.x uses the form [i, 0, 0] for inputs and 1.3.x uses [i, 0]
+            for input_list in [[deleted_node_operator_idx, 0, 0], [deleted_node_operator_idx, 0]]:
+                if input_list in symbol_dict[consts.NODES][join_idx][consts.INPUTS]:
+                    symbol_dict[consts.NODES][join_idx][consts.INPUTS].remove(input_list)
             # Determine number of inputs to join node
             num_inputs = len(symbol_dict[consts.NODES][join_idx][consts.INPUTS])
             # Remove join layer if it has fewer than 2 inputs
@@ -341,7 +343,7 @@ class ModelHandler(object):
         heads = []
         for idx, node in enumerate(nodes):
             if node[consts.NAME] in output_layer_names:
-                heads.append([idx, 0, 0])
+                heads.append([idx, 0])
         return heads
 
     @staticmethod
@@ -400,7 +402,7 @@ class ModelHandler(object):
                 inputs_set = set(inputs)
 
             inputs = sorted([name2idx[name] for name in inputs])
-            nodes[node_id][consts.INPUTS] = [[i, 0, 0] for i in inputs]
+            nodes[node_id][consts.INPUTS] = [[i, 0] for i in inputs]
         return nodes
 
     @staticmethod
