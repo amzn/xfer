@@ -28,7 +28,6 @@ LABEL_IDX = -2
 DATA = 'data'
 N = 'n'
 SELF = 'self'
-LAYER = 'layer_factory_list'
 NAME = 'name'
 ATTRIBUTES = 'attrs'
 INPUTS = 'inputs'
