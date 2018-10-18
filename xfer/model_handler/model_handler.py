@@ -197,7 +197,7 @@ class ModelHandler(object):
         for layer_symbol in reversed(layer_list):
             temp_symbol_dict = copy.deepcopy(net_symbol_dict)
             added_layer_names.append(layer_symbol.name)
-            layer_symbol_dict = json.loads(layer_symbol.tojson())
+            layer_symbol_dict = self._get_symbol_dict(layer_symbol)
 
             nodes_added = len(layer_symbol_dict[consts.NODES]) - 1  # The data node of the new symbol will not be added
 
