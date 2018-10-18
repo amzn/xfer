@@ -67,12 +67,13 @@ class ModelHandler(object):
             symbol_dict = self._get_symbol_dict(sym)
 
             drop_layer_name = symbol_dict[consts.NODES][-1][consts.NAME]  # Get name of last layer
-            last_layer_input_ids = self._get_node_ids_of_inputs_to_layer(symbol_dict,
-                                                                         len(symbol_dict[consts.NODES]) - 1)
+            last_layer_input_ids = self._get_node_ids_of_inputs_to_layer(symbol_dict=symbol_dict,
+                                                                         node_idx=len(symbol_dict[consts.NODES]) - 1)
             last_layer_input_names = [v[consts.NAME] for c, v in enumerate(symbol_dict[consts.NODES])
                                       if c in last_layer_input_ids]
 
-            new_last_layer = self._get_relevant_layer_name_ambiguous(last_layer_input_names, keep_branch_names, n)
+            new_last_layer = self._get_relevant_layer_name_ambiguous(available_layer_names=last_layer_input_names,
+                                                                     reference_layer_names=keep_branch_names, n=n)
 
             # If case is not ambiguous then new last layer is simply the penultimate layer
             if new_last_layer is None:
@@ -116,7 +117,8 @@ class ModelHandler(object):
             nodes_using_zero_ids = self._get_layer_ids_with_node_zero_as_input(symbol_dict[consts.NODES])
             nodes_using_zero_ids_names = [v[consts.NAME] for c, v in enumerate(symbol_dict[consts.NODES])
                                           if c in nodes_using_zero_ids]
-            drop_layer_name = self._get_relevant_layer_name_ambiguous(nodes_using_zero_ids_names, drop_layer_names, n)
+            drop_layer_name = self._get_relevant_layer_name_ambiguous(available_layer_names=nodes_using_zero_ids_names,
+                                                                      reference_layer_names=drop_layer_names, n=n)
             # If case is not ambiguous then the dropped layer is simply the first layer
             if drop_layer_name is None:
                 drop_layer_name = self._get_name_of_first_operation(symbol_dict[consts.NODES])
@@ -129,17 +131,24 @@ class ModelHandler(object):
             symbol_dict = self._delete_layer_nodes_given_operator_node(symbol_dict, del_node_op_idx)
 
             symbol_dict, join_idx, join_deleted, join_layer_name = self._remove_redundant_join_layer(
-                                                                    symbol_dict, drop_layer_name,
-                                                                    temp_symbol_dict[consts.NODES], del_node_op_idx)
+                                                                    symbol_dict=symbol_dict,
+                                                                    drop_layer_name=drop_layer_name,
+                                                                    nodes_before=temp_symbol_dict[consts.NODES],
+                                                                    deleted_node_operator_idx=del_node_op_idx)
             if join_deleted:
                 layers_dropped.append(join_layer_name)
 
             # Update symbol dictionary attributes
             symbol_dict[consts.ARG_NODES] = self._get_arg_nodes(symbol_dict[consts.NODES])
-            symbol_dict[consts.HEADS] = self._get_heads(symbol_dict[consts.NODES], self._get_output_layer_names(
-                temp_symbol_dict[consts.NODES], temp_symbol_dict[consts.HEADS]))
-            symbol_dict[consts.NODES] = self._update_inputs(symbol_dict[consts.NODES], temp_symbol_dict[consts.NODES],
-                                                            drop_layer_name, join_deleted, join_idx)
+            symbol_dict[consts.HEADS] = self._get_heads(nodes=symbol_dict[consts.NODES],
+                                                        output_layer_names=self._get_output_layer_names(
+                                                            nodes=temp_symbol_dict[consts.NODES],
+                                                            heads=temp_symbol_dict[consts.HEADS]))
+            symbol_dict[consts.NODES] = self._update_inputs(nodes=symbol_dict[consts.NODES],
+                                                            original_nodes=temp_symbol_dict[consts.NODES],
+                                                            drop_layer_name=drop_layer_name,
+                                                            join_deleted=join_deleted,
+                                                            join_idx=join_idx)
 
         sym = mx.sym.load_json(json.dumps(symbol_dict))
 
@@ -170,14 +179,17 @@ class ModelHandler(object):
             # Update inputs of nodes
             for node in layer_symbol_dict[consts.NODES]:
                 for ip in node[consts.INPUTS]:
-                    ip[0] += num_existing_nodes - 1
+                    ip[0] += num_existing_nodes - 1  # idx of last node is num_nodes-1
 
-            # Concatentate nodes list
-            net_symbol_dict[consts.NODES] = net_symbol_dict[consts.NODES] + layer_symbol_dict[consts.NODES][1:]
+            new_symbol_dict = {}
+            # Concatentate entire network nodes list with layer nodes list, omitting layer data node
+            new_symbol_dict[consts.NODES] = net_symbol_dict[consts.NODES] + layer_symbol_dict[consts.NODES][1:]
 
-            # Update attributes of network symbol dictionary
-            net_symbol_dict[consts.HEADS] = self._get_heads(net_symbol_dict[consts.NODES], layer_symbol.name)
-            net_symbol_dict[consts.ARG_NODES] = self._get_arg_nodes(net_symbol_dict[consts.NODES])
+            # Get attributes of new network symbol dictionary
+            new_symbol_dict[consts.HEADS] = self._get_heads(nodes=new_symbol_dict[consts.NODES],
+                                                            output_layer_names=[layer_symbol.name])
+            new_symbol_dict[consts.ARG_NODES] = self._get_arg_nodes(new_symbol_dict[consts.NODES])
+            net_symbol_dict = new_symbol_dict
 
         sym = mx.sym.load_json(json.dumps(net_symbol_dict))
         self.update_sym(sym)
@@ -197,7 +209,7 @@ class ModelHandler(object):
         for layer_symbol in reversed(layer_list):
             temp_symbol_dict = copy.deepcopy(net_symbol_dict)
             added_layer_names.append(layer_symbol.name)
-            layer_symbol_dict = json.loads(layer_symbol.tojson())
+            layer_symbol_dict = self._get_symbol_dict(layer_symbol)
 
             nodes_added = len(layer_symbol_dict[consts.NODES]) - 1  # The data node of the new symbol will not be added
 
@@ -205,9 +217,10 @@ class ModelHandler(object):
             net_symbol_dict[consts.NODES] = [net_symbol_dict[consts.NODES][0]] + \
                 layer_symbol_dict[consts.NODES][1:] + net_symbol_dict[consts.NODES][1:]
 
-            net_symbol_dict[consts.HEADS] = self._get_heads(net_symbol_dict[consts.NODES], self._get_output_layer_names(
-                temp_symbol_dict[consts.NODES], temp_symbol_dict[consts.HEADS]))
-
+            net_symbol_dict[consts.HEADS] = self._get_heads(nodes=net_symbol_dict[consts.NODES],
+                                                            output_layer_names=self._get_output_layer_names(
+                                                                temp_symbol_dict[consts.NODES],
+                                                                temp_symbol_dict[consts.HEADS]))
             # Update inputs of nodes
             for node in net_symbol_dict[consts.NODES][nodes_added+1:]:
                 for ip in node[consts.INPUTS]:
