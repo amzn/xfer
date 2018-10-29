@@ -243,7 +243,6 @@ class ModelHandler(object):
         for idx, node in enumerate(nodes):
             if node[consts.NAME] == layer_name:
                 return idx
-        if layer_node_idx is None:
             raise ValueError("No node with name matching '{}'".format(layer_name))
         return layer_node_idx
 
