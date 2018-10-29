@@ -234,8 +234,6 @@ class ModelHandler(object):
         Shift input indices of nodes by shift constant.
         """
         for node in nodes:
-            print(node)
-            # import pdb; pdb.set_trace()
             for ip in node[consts.INPUTS]:
                 ip[0] += shift_constant
         return nodes
