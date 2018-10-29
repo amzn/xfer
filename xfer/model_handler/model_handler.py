@@ -294,7 +294,7 @@ class ModelHandler(object):
         if len(available_layer_names) > 1:
             try:
                 relevant_layer_name = reference_layer_names.pop(0)
-            # If an AttributeError is raised, it means that no layer names were given in reference_layer_names
+            # If an AttributeError is raised, it means that reference_layer_names doesn't have the attribute 'pop'
             # If an IndexError is raised, it means that not enough layer names were given in reference_layer_names
             except (AttributeError, IndexError):
                 raise exceptions.ModelError(self._ambiguous_layer_drop_error_message(
