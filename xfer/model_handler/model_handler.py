@@ -216,10 +216,10 @@ class ModelHandler(object):
             added_layer_names.append(layer_name)
 
         output_layer_names = self._get_output_layer_names(network_symbol[consts.NODES], network_symbol[consts.HEADS])
-        # Shift input indices of existing nodes by the number of nodes being added
-        network_symbol[consts.NODES] = self._shift_input_indices(network_symbol[consts.NODES], len(new_nodes))
+        # Shift input indices of existing nodes by the number of nodes being added. Exclude input node.
+        shifted_input_network_nodes = self._shift_input_indices(network_symbol[consts.NODES][1:], len(new_nodes))
         # Concatentate data node of network, new layer nodes and remaining network nodes
-        network_symbol[consts.NODES] = [network_symbol[consts.NODES][0]] + new_nodes + network_symbol[consts.NODES][1:]
+        network_symbol[consts.NODES] = [network_symbol[consts.NODES][0]] + new_nodes + shifted_input_network_nodes
         network_symbol[consts.HEADS] = self._get_heads(network_symbol[consts.NODES],
                                                        output_layer_names=output_layer_names)
         network_symbol[consts.ARG_NODES] = self._get_arg_nodes(network_symbol[consts.NODES])
@@ -243,7 +243,7 @@ class ModelHandler(object):
         for idx, node in enumerate(nodes):
             if node[consts.NAME] == layer_name:
                 return idx
-       raise ValueError("No node with name matching '{}'".format(layer_name))
+        raise ValueError("No node with name matching '{}'".format(layer_name))
 
     def _remove_redundant_join_layer(self, symbol_dict, drop_layer_name, nodes_before, deleted_node_operator_idx):
         """
