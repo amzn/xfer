@@ -198,37 +198,37 @@ class ModelHandler(object):
     def add_layer_bottom(self, layer_list):
         """
         Add layer to input of model.
-        This method requires the entire symbol to be recreated internally.
+        If layer_list, [layerA, layerB], is added to bottom of model, (layer1, layer2, layer3), then result will be
+        model with layers (layerA, layerB, layer1, layer2, layer3).
 
         :param layer_list: List of MxNet symbol layers to be added to model input.
         :type layer_list: list(:class:`mx.symbol`)
         """
+        network_symbol = self._get_symbol_dict(self.symbol)
+        # Concatentate nodes of new layers
+        new_nodes = []
         added_layer_names = []
-        net_symbol_dict = self._get_symbol_dict(self.symbol)
-
-        for layer_symbol in reversed(layer_list):
-            temp_symbol_dict = copy.deepcopy(net_symbol_dict)
-            added_layer_names.append(layer_symbol.name)
-            layer_symbol_dict = self._get_symbol_dict(layer_symbol)
-
-            nodes_added = len(layer_symbol_dict[consts.NODES]) - 1  # The data node of the new symbol will not be added
-
-            # Concatentate data node of network, layer nodes of new layer and remainder of network nodes
-            net_symbol_dict[consts.NODES] = [net_symbol_dict[consts.NODES][0]] + \
-                layer_symbol_dict[consts.NODES][1:] + net_symbol_dict[consts.NODES][1:]
-
-            net_symbol_dict[consts.HEADS] = self._get_heads(nodes=net_symbol_dict[consts.NODES],
-                                                            output_layer_names=self._get_output_layer_names(
-                                                                temp_symbol_dict[consts.NODES],
-                                                                temp_symbol_dict[consts.HEADS]))
-            # Update inputs of nodes
-            for node in net_symbol_dict[consts.NODES][nodes_added+1:]:
+        for layer in layer_list:
+            layer_nodes = self._get_symbol_dict(layer)[consts.NODES]
+            # Shift input indices of new layer by number of nodes added before it
+            for node in layer_nodes:
                 for ip in node[consts.INPUTS]:
-                    ip[0] += nodes_added
+                    ip[0] += len(new_nodes)
+            new_nodes += layer_nodes[1:]  # adding all but input node
+            added_layer_names.append(layer_nodes[-1][consts.NAME])
 
-            net_symbol_dict[consts.ARG_NODES] = self._get_arg_nodes(net_symbol_dict[consts.NODES])
+        output_layer_names = self._get_output_layer_names(network_symbol[consts.NODES], network_symbol[consts.HEADS])
+        # Shift input indices of existing nodes by the number of nodes being added
+        for node in network_symbol[consts.NODES]:
+            for ip in node[consts.INPUTS]:
+                ip[0] += len(new_nodes)
+        # Concatentate data node of network, new layer nodes and remaining network nodes
+        network_symbol[consts.NODES] = [network_symbol[consts.NODES][0]] + new_nodes + network_symbol[consts.NODES][1:]
+        network_symbol[consts.HEADS] = self._get_heads(network_symbol[consts.NODES],
+                                                       output_layer_names=output_layer_names)
+        network_symbol[consts.ARG_NODES] = self._get_arg_nodes(network_symbol[consts.NODES])
 
-        sym = mx.sym.load_json(json.dumps(net_symbol_dict))
+        sym = self._get_symbol(network_symbol)
         self.update_sym(sym)
         logging.info('Added {} to model bottom'.format(', '.join(added_layer_names)))
 
@@ -777,6 +777,13 @@ class ModelHandler(object):
         :rtype: dict
         """
         return json.loads(symbol.tojson())
+
+    @staticmethod
+    def _get_symbol(symbol_dict):
+        """
+        Get MXNet symbol from its symbol dictionary.
+        """
+        return mx.sym.load_json(json.dumps(symbol_dict))
 
     @property
     def layer_names(self):
