@@ -112,7 +112,9 @@ class ModelHandler(object):
 
         layers_dropped = []
         for n in range(num_layers_to_drop):
-            temp_symbol_dict = copy.deepcopy(symbol_dict)  # Make copy of symbol dictionary before any changes made
+            original_nodes = copy.deepcopy(symbol_dict[consts.NODES])
+            output_layer_names = self._get_output_layer_names(nodes=symbol_dict[consts.NODES],
+                                                              heads=symbol_dict[consts.HEADS])
 
             nodes_using_zero_ids = self._get_layer_ids_with_node_zero_as_input(symbol_dict[consts.NODES])
             nodes_using_zero_ids_names = [v[consts.NAME] for c, v in enumerate(symbol_dict[consts.NODES])
@@ -133,7 +135,7 @@ class ModelHandler(object):
             symbol_dict, join_idx, join_deleted, join_layer_name = self._remove_redundant_join_layer(
                                                                     symbol_dict=symbol_dict,
                                                                     drop_layer_name=drop_layer_name,
-                                                                    nodes_before=temp_symbol_dict[consts.NODES],
+                                                                    nodes_before=original_nodes,
                                                                     deleted_node_operator_idx=del_node_op_idx)
             if join_deleted:
                 layers_dropped.append(join_layer_name)
@@ -141,16 +143,13 @@ class ModelHandler(object):
             # Update symbol dictionary attributes
             symbol_dict[consts.ARG_NODES] = self._get_arg_nodes(symbol_dict[consts.NODES])
             symbol_dict[consts.HEADS] = self._get_heads(nodes=symbol_dict[consts.NODES],
-                                                        output_layer_names=self._get_output_layer_names(
-                                                            nodes=temp_symbol_dict[consts.NODES],
-                                                            heads=temp_symbol_dict[consts.HEADS]))
+                                                        output_layer_names=output_layer_names)
             symbol_dict[consts.NODES] = self._update_inputs(nodes=symbol_dict[consts.NODES],
-                                                            original_nodes=temp_symbol_dict[consts.NODES],
+                                                            original_nodes=original_nodes,
                                                             drop_layer_name=drop_layer_name,
                                                             join_deleted=join_deleted,
                                                             join_idx=join_idx)
-
-        sym = mx.sym.load_json(json.dumps(symbol_dict))
+        sym = self._get_symbol(symbol_dict)
 
         logging.info('{} deleted from model bottom'.format(', '.join(layers_dropped)))
         if drop_layer_names is not None:
@@ -178,8 +177,8 @@ class ModelHandler(object):
             # Shift input indices of layer nodes by the number of nodes in the existing network and the nodes added
             # before. -1 because input indexing begins at zero.
             layer_nodes = self._shift_input_indices(layer_nodes, len(network_symbol[consts.NODES]) + len(new_nodes) - 1)
-            new_nodes += layer_nodes[1:]
-            layer_name = layer_nodes[-1][consts.NAME]
+            new_nodes += layer_nodes[1:]  # Excluding input node at index 0
+            layer_name = layer_nodes[-1][consts.NAME]  # Last node contains layer name
             self._validate_layer_name(layer_name)
             added_layer_names.append(layer_name)
 
@@ -212,7 +211,7 @@ class ModelHandler(object):
             # Shift input indices of new layer by number of nodes added before it
             layer_nodes = self._shift_input_indices(layer_nodes, len(new_nodes))
             new_nodes += layer_nodes[1:]  # adding all but input node
-            layer_name = layer_nodes[-1][consts.NAME]
+            layer_name = layer_nodes[-1][consts.NAME]  # Last node contains layer name
             self._validate_layer_name(layer_name)
             added_layer_names.append(layer_name)
 
