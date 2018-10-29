@@ -240,7 +240,6 @@ class ModelHandler(object):
 
     @staticmethod
     def _get_layer_node_idx(nodes, layer_name):
-        layer_node_idx = None
         for idx, node in enumerate(nodes):
             if node[consts.NAME] == layer_name:
                 layer_node_idx = idx
