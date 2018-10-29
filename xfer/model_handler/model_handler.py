@@ -244,7 +244,6 @@ class ModelHandler(object):
             if node[consts.NAME] == layer_name:
                 return idx
        raise ValueError("No node with name matching '{}'".format(layer_name))
-        return layer_node_idx
 
     def _remove_redundant_join_layer(self, symbol_dict, drop_layer_name, nodes_before, deleted_node_operator_idx):
         """
