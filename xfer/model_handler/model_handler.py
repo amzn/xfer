@@ -67,13 +67,10 @@ class ModelHandler(object):
             symbol_dict = self._get_symbol_dict(sym)
 
             drop_layer_name = symbol_dict[consts.NODES][-1][consts.NAME]  # Get name of last layer
-            last_layer_input_ids = self._get_node_ids_of_inputs_to_layer(symbol_dict=symbol_dict,
-                                                                         node_idx=len(symbol_dict[consts.NODES]) - 1)
-            last_layer_input_names = [v[consts.NAME] for c, v in enumerate(symbol_dict[consts.NODES])
-                                      if c in last_layer_input_ids]
-
-            new_last_layer = self._get_relevant_layer_name_ambiguous(available_layer_names=last_layer_input_names,
-                                                                     reference_layer_names=keep_branch_names, n=n)
+            last_layer_input_names = self._get_names_of_inputs_to_layer(symbol_dict=symbol_dict,
+                                                                        node_idx=len(symbol_dict[consts.NODES]) - 1)
+            new_last_layer = self._get_layer_name_ambiguous(available_layer_names=last_layer_input_names,
+                                                            reference_layer_names=keep_branch_names, n=n)
 
             # If case is not ambiguous then new last layer is simply the penultimate layer
             if new_last_layer is None:
@@ -113,14 +110,12 @@ class ModelHandler(object):
         layers_dropped = []
         for n in range(num_layers_to_drop):
             original_nodes = copy.deepcopy(symbol_dict[consts.NODES])
-            output_layer_names = self._get_output_layer_names(nodes=symbol_dict[consts.NODES],
-                                                              heads=symbol_dict[consts.HEADS])
-
+            output_layer_names = self._get_output_layer_names(symbol_dict)
             nodes_using_zero_ids = self._get_layer_ids_with_node_zero_as_input(symbol_dict[consts.NODES])
             nodes_using_zero_ids_names = [v[consts.NAME] for c, v in enumerate(symbol_dict[consts.NODES])
                                           if c in nodes_using_zero_ids]
-            drop_layer_name = self._get_relevant_layer_name_ambiguous(available_layer_names=nodes_using_zero_ids_names,
-                                                                      reference_layer_names=drop_layer_names, n=n)
+            drop_layer_name = self._get_layer_name_ambiguous(available_layer_names=nodes_using_zero_ids_names,
+                                                             reference_layer_names=drop_layer_names, n=n)
             # If case is not ambiguous then the dropped layer is simply the first layer
             if drop_layer_name is None:
                 drop_layer_name = self._get_name_of_first_operation(symbol_dict[consts.NODES])
@@ -160,8 +155,8 @@ class ModelHandler(object):
     def add_layer_top(self, layer_list):
         """
         Add layer to output of model.
-        If layer_list, [layerA, layerB], is added to top of model, (layer1, layer2, layer3), then result will be
-        model with layers (layer1, layer2, layer3, layerA, layerB).
+        model layers = (layer1, layer2, layer3), layer_list = [layerA, layerB] -> model layers =
+        (layer1, layer2, layer3, layerA, layerB)
 
         :param layer_list: List of MxNet symbol layers to be added to model output.
         :type layer_list: list(:class:`mx.symbol`)
@@ -196,8 +191,8 @@ class ModelHandler(object):
     def add_layer_bottom(self, layer_list):
         """
         Add layer to input of model.
-        If layer_list, [layerA, layerB], is added to bottom of model, (layer1, layer2, layer3), then result will be
-        model with layers (layerA, layerB, layer1, layer2, layer3).
+        model layers = (layer1, layer2, layer3), layer_list = [layerA, layerB] -> model layers =
+        (layerA, layerB, layer1, layer2, layer3)
 
         :param layer_list: List of MxNet symbol layers to be added to model input.
         :type layer_list: list(:class:`mx.symbol`)
@@ -215,7 +210,7 @@ class ModelHandler(object):
             self._validate_layer_name(layer_name)
             added_layer_names.append(layer_name)
 
-        output_layer_names = self._get_output_layer_names(network_symbol[consts.NODES], network_symbol[consts.HEADS])
+        output_layer_names = self._get_output_layer_names(network_symbol)
         # Shift input indices of existing nodes by the number of nodes being added. Exclude input node.
         shifted_input_network_nodes = self._shift_input_indices(network_symbol[consts.NODES][1:], len(new_nodes))
         # Concatentate data node of network, new layer nodes and remaining network nodes
@@ -283,10 +278,10 @@ class ModelHandler(object):
 
         return symbol_dict, join_idx, join_deleted, join_layer_name
 
-    def _get_relevant_layer_name_ambiguous(self, available_layer_names, reference_layer_names, n):
+    def _get_layer_name_ambiguous(self, available_layer_names, reference_layer_names, n):
         """
-        If there is no ambiguity in choosing the relevant layer then return None. Otherwise assert that disambiguation
-        is provided in reference layer names and return relevant layer.
+        If there is no ambiguity in choosing the layer (i.e. there is only one available layer) then return
+        None. Otherwise, use reference_layer_names for disambiguation and return layer name.
         """
         relevant_layer_name = None
         # If there are multiple available layers then this is an ambiguous case. So the first item in reference layer
@@ -319,21 +314,18 @@ class ModelHandler(object):
         """
         Return the index of the first node of a layer given the index of the operation node of the layer and arg_nodes.
         """
-        first_node_idx = None
         for node_idx in reversed(range(min(arg_nodes), operation_idx + 1)):  # +1 because range(a,b) doesn't include b
             # -1 because the first index is the index before the first that doesn't appear in arg nodes
             # Do not want to delete input (node 0)
             if (node_idx - 1) not in arg_nodes or (node_idx - 1) == 0:
-                first_node_idx = node_idx
-                break
-        return first_node_idx
+                return node_idx
+        raise exceptions.ModelError('Could not find first node of layer.')
 
     def _delete_layer_nodes_given_operator_node(self, symbol_dict, node_idx):
         """
         Return symbol dictionary with the nodes of a layer deleted. The layer to delete is given by the index of its
         operator node.
         """
-        symbol_dict = copy.deepcopy(symbol_dict)
         symbol_dict[consts.ARG_NODES] = self._get_arg_nodes(symbol_dict[consts.NODES])
         # Find first node for this layer
         first_idx = self._get_idx_of_first_node_of_layer(node_idx, symbol_dict[consts.ARG_NODES])
@@ -424,16 +416,11 @@ class ModelHandler(object):
         return nodes
 
     @staticmethod
-    def _get_output_layer_names(nodes, heads):
+    def _get_output_layer_names(symbol_dict):
         """
-        Return names of output layers
+        Return names of output layers given symbol dictionary.
         """
-        output_nodes = [i[0] for i in heads]
-        output_layer_names = []
-        for c, node in enumerate(nodes):
-            if c in output_nodes:
-                output_layer_names.append(node[consts.NAME])
-        return output_layer_names
+        return [symbol_dict[consts.NODES][i[0]][consts.NAME] for i in symbol_dict[consts.HEADS]]
 
     @staticmethod
     def _assert_model_has_single_output(symbol_dict):
@@ -445,29 +432,25 @@ class ModelHandler(object):
             for head in symbol_dict[consts.HEADS]:
                 output_layer_names.append(symbol_dict[consts.NODES][head[0]][consts.NAME])
             raise exceptions.ModelError(
-                'ModelHandler does not support drop_layer_top models with more than one output. ({})'.format(
+                'ModelHandler does not support this operation for models with more than one output. ({})'.format(
                     ', '.join(output_layer_names)))
 
     @staticmethod
-    def _get_node_ids_of_inputs_to_layer(symbol_dict, node_idx):
+    def _get_names_of_inputs_to_layer(symbol_dict, node_idx):
         """
-        Get the names of the layers that are inputs to the last layer.
+        Get the names of the layers that are inputs to specified layer.
         """
         # Assert node_idx refers to an operation
         assert symbol_dict[consts.NODES][node_idx][consts.OPERATION] != consts.NO_OP,\
             'node_idx: {} does not refer to a layer'.format(node_idx)
-
         # Get list of layer inputs to layer
-        layer_inputs = []
+        inputs_to_layer = []
         for i in symbol_dict[consts.NODES][node_idx][consts.INPUTS]:
-            layer_inputs.append(i[0])
-
-        # Filter out null nodes
-        filtered_layer_inputs = []
-        for i in layer_inputs:
-            if symbol_dict[consts.NODES][i][consts.OPERATION] != consts.NO_OP:
-                filtered_layer_inputs.append(i)
-        return filtered_layer_inputs
+            # Do not add null layers to list of inputs
+            if symbol_dict[consts.NODES][i[0]][consts.OPERATION] != consts.NO_OP:
+                inputs_to_layer.append(i[0])
+        return [node[consts.NAME] for idx, node in enumerate(symbol_dict[consts.NODES])
+                if idx in inputs_to_layer]
 
     @staticmethod
     def _ambiguous_layer_drop_error_message(layer_names, n):

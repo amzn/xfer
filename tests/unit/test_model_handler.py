@@ -17,6 +17,7 @@ import json
 import os
 import mxnet as mx
 import numpy as np
+import copy
 from collections import OrderedDict
 
 from xfer import model_handler
@@ -155,7 +156,7 @@ class TestModelHandler(TestCase):
 
         with self.assertLogs() as cm:
             mh.drop_layer_top(3, keep_branch_names=['a_3'])
-        print(cm.output)
+
         assert cm.output == ['INFO:root:softmax, _plus5, a_3 deleted from model top']
 
         assert mh.layer_names == ['flatten0', 'a_1', 'a_2']
@@ -208,8 +209,7 @@ class TestModelHandler(TestCase):
 
         for layer_name in ['conv1', 'act1', 'conv2']:
             assert layer_name not in list(self.mh.layer_type_dict.keys())
-        print(outputs_pre)
-        print(outputs_post)
+
         assert set(outputs_pre).symmetric_difference(set(outputs_post)) == {'conv1_bias', 'conv1_weight',
                                                                             'conv1_output', 'act1_output',
                                                                             'conv2_bias',  'conv2_output',
@@ -505,14 +505,14 @@ class TestModelHandler(TestCase):
         with self.assertRaises(exceptions.ModelError):
             self.mh._assert_model_has_single_output(self.mh._get_symbol_dict(output_3))
 
-    def test_get_node_ids_of_inputs_to_layer(self):
+    def test_get_names_of_inputs_to_layer(self):
         symbol_dict = self.mh._get_symbol_dict(self.mh.symbol)
 
-        assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 7) == [4]
-        assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 8) == [7]
-        assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 15) == [13]
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 7) == ['act1']
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 8) == ['conv2']
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 15) == ['fullyconnected0']
 
-    def test_get_node_ids_of_inputs_to_layer_split_2(self):
+    def test_get_names_of_inputs_to_layer_split_2(self):
         data = mx.sym.Variable('data')
         fc1 = mx.sym.FullyConnected(data=data, name='fc1', num_hidden=128)
         act1 = mx.sym.Activation(data=fc1, name='relu1', act_type="relu")
@@ -523,11 +523,11 @@ class TestModelHandler(TestCase):
 
         symbol_dict = self.mh._get_symbol_dict(plus)
 
-        assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 7) == [4]
-        assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 8) == [7]
-        assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 12) == [7, 11]
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 7) == ['relu1']
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 8) == ['fc2']
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 12) == ['fc2', 'fc3']
 
-    def test_get_node_ids_of_inputs_to_layer_split_3(self):
+    def test_get_names_of_inputs_to_layer_split_3(self):
         data = mx.sym.Variable('data')
         fc1 = mx.sym.FullyConnected(data=data, name='fc1', num_hidden=128)
         act1 = mx.sym.Activation(data=fc1, name='relu1', act_type="relu")
@@ -538,9 +538,9 @@ class TestModelHandler(TestCase):
 
         symbol_dict = self.mh._get_symbol_dict(concat)
 
-        assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 4) == [3]
-        assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 11) == [8]
-        assert self.mh._get_node_ids_of_inputs_to_layer(symbol_dict, 12) == [3, 7, 11]
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 4) == ['fc1']
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 11) == ['relu2']
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 12) == ['fc1', 'fc2', 'fc3']
 
     def test_ambiguous_layer_drop_error_message(self):
         layer_names = ['layer0', 'layer1']
@@ -585,31 +585,17 @@ class TestModelHandler(TestCase):
             self.mh._get_layer_node_idx(self.symbol_dict['nodes'], 'nonexistentlayer')
 
     def test_delete_layer_nodes_given_operator_node(self):
-        original_length = len(self.nodes)
-        self._test_delete_layer_nodes_given_operator_node_convolution(original_length)
-        self._test_delete_layer_nodes_given_operator_node_activation(original_length)
-        self._test_delete_layer_nodes_given_operator_node_softmax(original_length)
-        self._test_delete_layer_nodes_given_operator_node_fully_connected(original_length)
+        self._test_delete_layer_nodes_given_operator_node_individual(3, 3)
+        self._test_delete_layer_nodes_given_operator_node_individual(8, 1)
+        self._test_delete_layer_nodes_given_operator_node_individual(13, 3)
+        self._test_delete_layer_nodes_given_operator_node_individual(15, 2)
 
-    def _test_delete_layer_nodes_given_operator_node_convolution(self, original_length):
-        output_dict = self.mh._delete_layer_nodes_given_operator_node(self.symbol_dict, 3)
+    def _test_delete_layer_nodes_given_operator_node_individual(self, idx, expected_diff):
+        symbol_dict = copy.deepcopy(self.symbol_dict)  # deep copy to avoid modifiying original dict
+        original_length = len(symbol_dict['nodes'])
+        output_dict = self.mh._delete_layer_nodes_given_operator_node(symbol_dict, idx)
 
-        assert len(output_dict['nodes']) == original_length - 3
-
-    def _test_delete_layer_nodes_given_operator_node_activation(self, original_length):
-        output_dict = self.mh._delete_layer_nodes_given_operator_node(self.symbol_dict, 8)
-
-        assert len(output_dict['nodes']) == original_length - 1
-
-    def _test_delete_layer_nodes_given_operator_node_fully_connected(self, original_length):
-        output_dict = self.mh._delete_layer_nodes_given_operator_node(self.symbol_dict, 13)
-
-        assert len(output_dict['nodes']) == original_length - 3
-
-    def _test_delete_layer_nodes_given_operator_node_softmax(self, original_length):
-        output_dict = self.mh._delete_layer_nodes_given_operator_node(self.symbol_dict, 15)
-
-        assert len(output_dict['nodes']) == original_length - 2
+        assert len(output_dict['nodes']) == original_length - expected_diff
 
     def test_get_arg_nodes(self):
         assert self.mh._get_arg_nodes(self.nodes) == [0, 1, 2, 5, 6, 11, 12, 14]
@@ -655,7 +641,7 @@ class TestModelHandler(TestCase):
                     assert node['inputs'][i][0] == expected_input[i][0]
 
     def test_get_output_layer_names(self):
-        self.mh._get_output_layer_names(self.nodes, self.heads) == ['softmaxoutput1']
+        self.mh._get_output_layer_names(self.symbol_dict) == ['softmaxoutput1']
 
         data = mx.sym.Variable('data')
         fc1 = mx.sym.FullyConnected(data=data, name='fc1', num_hidden=128)
@@ -674,7 +660,7 @@ class TestModelHandler(TestCase):
 
         for output, output_name in zip(outputs, output_names):
             symbol_dict = self.mh._get_symbol_dict(output)
-            self.mh._get_output_layer_names(symbol_dict['nodes'], symbol_dict['heads']) == output_name
+            self.mh._get_output_layer_names(symbol_dict) == output_name
 
     @staticmethod
     def _build_symbol_with_nodes_with_zero_input():
@@ -702,6 +688,24 @@ class TestModelHandler(TestCase):
         idx = self.mh._get_join_idx([3, 7], symbol_dict['nodes'], symbol_dict['nodes'], 'fc1a')
 
         assert idx == 9
+
+    def test_get_layer_name_ambiguous(self):
+        available_layer_names_one = ['single_layer']
+        available_layer_names_many = ['layer_1', 'layer_2']
+        reference_layer_names = ['layer_1']
+        n = 2
+
+        assert self.mh._get_layer_name_ambiguous(available_layer_names_one, reference_layer_names, n) is None
+        assert self.mh._get_layer_name_ambiguous(available_layer_names_many, reference_layer_names, n) == 'layer_1'
+        assert self.mh._get_layer_name_ambiguous(available_layer_names_one, [], n) is None
+        assert self.mh._get_layer_name_ambiguous(available_layer_names_one, None, n) is None
+
+        with self.assertRaises(exceptions.ModelError):
+            self.mh._get_layer_name_ambiguous(available_layer_names_many, [], n)
+        with self.assertRaises(exceptions.ModelError):
+            self.mh._get_layer_name_ambiguous(available_layer_names_many, None, n)
+        with self.assertRaises(exceptions.ModelError):
+            self.mh._get_layer_name_ambiguous(available_layer_names_many, ['layer_X'], n)
 
     @staticmethod
     def create_csv_iterator(batch_size=1):
