@@ -17,7 +17,6 @@ import json
 import os
 import mxnet as mx
 import numpy as np
-import copy
 from collections import OrderedDict
 
 from xfer import model_handler
@@ -131,62 +130,13 @@ class TestModelHandler(TestCase):
         with self.assertRaises(exceptions.ModelError):
             mh.drop_layer_top()
 
-    def test_drop_layer_top_split_1(self):
-        mh, plus_layer_name = self._build_split_net()
-        assert mh.layer_names == ['flatten0', 'a_1', 'a_2', 'a_3', 'b_1', 'b_2', plus_layer_name, 'softmax']
-
-        with self.assertLogs() as cm:
-            mh.drop_layer_top()
-        assert cm.output == ['INFO:root:softmax deleted from model top']
-
-        assert mh.layer_names == ['flatten0', 'a_1', 'a_2', 'a_3', 'b_1', 'b_2', plus_layer_name]
-
-        with self.assertRaises(exceptions.ModelError):
-            mh.drop_layer_top()
-
-        with self.assertLogs() as cm:
-            mh.drop_layer_top(keep_branch_names=['a_3'])
-        assert cm.output == ['INFO:root:{} deleted from model top'.format(plus_layer_name)]
-
-        assert mh.layer_names == ['flatten0', 'a_1', 'a_2', 'a_3']
-
-    def test_drop_layer_top_split_3(self):
-        mh, plus_layer_name = self._build_split_net()
-        assert mh.layer_names == ['flatten0', 'a_1', 'a_2', 'a_3', 'b_1', 'b_2', plus_layer_name, 'softmax']
-
-        with self.assertLogs() as cm:
-            mh.drop_layer_top(3, keep_branch_names=['a_3'])
-
-        assert cm.output == ['INFO:root:softmax, _plus5, a_3 deleted from model top']
-
-        assert mh.layer_names == ['flatten0', 'a_1', 'a_2']
-
-        with self.assertRaises(exceptions.ModelError):
-            mh.drop_layer_top(3)
-
-    def test_drop_layer_top_incorrect_keep_branch_names(self):
+    def test_drop_layer_top_split(self):
         mh, plus_layer_name = self._build_split_net()
         mh.drop_layer_top()
-
         with self.assertRaises(exceptions.ModelError):
-            mh.drop_layer_top(keep_branch_names=['false_layer_name'])
-
-    def test_drop_layer_top_redundant_keep_branch_names(self):
-        with self.assertLogs() as cm:
-            self.mh.drop_layer_top(keep_branch_names=['a_3'])
-
-        assert cm.output == ['INFO:root:softmaxoutput1 deleted from model top',
-                             'WARNING:root:Did not use all of keep_branch_names: a_3']
-
-    def test_drop_layer_top_too_many_keep_branch_names(self):
-        mh, plus_layer_name = self._build_split_net()
-        mh.drop_layer_top()
-
-        with self.assertLogs() as cm:
-            mh.drop_layer_top(keep_branch_names=['a_3', 'a_4'])
-
-        assert cm.output == ['INFO:root:{} deleted from model top'.format(plus_layer_name),
-                             'WARNING:root:Did not use all of keep_branch_names: a_4']
+            mh.drop_layer_top()
+        with self.assertRaises(exceptions.ModelError):
+            mh.drop_layer_top(2)
 
     def test_drop_layer_bottom_1(self):
         assert 'conv1' in list(self.mh.layer_type_dict.keys())
@@ -239,154 +189,13 @@ class TestModelHandler(TestCase):
 
         return mh, plus_layer_name
 
-    def test_drop_layer_bottom_1_at_a_time_split(self):
-        mh, plus_layer_name = self._build_split_net()
-        assert mh.layer_names == ['flatten0', 'a_1', 'a_2', 'a_3', 'b_1', 'b_2', plus_layer_name, 'softmax']
-
-        with self.assertLogs() as cm:
-            mh.drop_layer_bottom()
-        assert cm.output == ['INFO:root:Dropping flatten0',
-                             'INFO:root:flatten0 deleted from model bottom']
-
+    def test_drop_layer_bottom_split(self):
+        mh, _ = self._build_split_net()
+        mh.drop_layer_bottom()
         with self.assertRaises(exceptions.ModelError):
             mh.drop_layer_bottom()
-
-        assert mh.layer_names == ['a_1', 'a_2', 'a_3', 'b_1', 'b_2', plus_layer_name, 'softmax']
-
         with self.assertRaises(exceptions.ModelError):
-            mh.drop_layer_bottom()
-
-        with self.assertLogs() as cm:
-            mh.drop_layer_bottom(drop_layer_names=['a_1'])
-        assert cm.output == ['INFO:root:Dropping a_1',
-                             'INFO:root:a_1 deleted from model bottom']
-
-        assert mh.layer_names == ['a_2', 'a_3', 'b_1', 'b_2', plus_layer_name, 'softmax']
-
-        with self.assertLogs() as cm:
-            mh.drop_layer_bottom(drop_layer_names=['b_1'])
-        assert cm.output == ['INFO:root:Dropping b_1',
-                             'INFO:root:b_1 deleted from model bottom']
-
-        assert mh.layer_names == ['a_2', 'a_3', 'b_2', plus_layer_name, 'softmax']
-
-        with self.assertRaises(exceptions.ModelError):
-            mh.drop_layer_bottom()
-
-        with self.assertLogs() as cm:
-            mh.drop_layer_bottom(drop_layer_names=['b_2'])
-        assert cm.output == ['INFO:root:Dropping b_2',
-                             'INFO:root:Dropping {} (join node auto-deleted)'.format(plus_layer_name),
-                             'INFO:root:b_2, {} deleted from model bottom'.format(plus_layer_name)]
-
-        assert mh.layer_names == ['a_2', 'a_3', 'softmax']
-
-        with self.assertLogs() as cm:
-            mh.drop_layer_bottom(drop_layer_names=['b_2'])
-        assert cm.output == ['INFO:root:Dropping a_2',
-                             'INFO:root:a_2 deleted from model bottom',
-                             'WARNING:root:Did not use all of drop_layer_names: b_2']
-
-        assert mh.layer_names == ['a_3', 'softmax']
-
-        with self.assertLogs() as cm:
-            mh.drop_layer_bottom()
-        assert cm.output == ['INFO:root:Dropping a_3',
-                             'INFO:root:a_3 deleted from model bottom']
-
-        assert mh.layer_names == ['softmax']
-
-        with self.assertRaises(exceptions.ModelError):
-            mh.drop_layer_bottom()
-
-    def test_drop_layer_bottom_2_at_a_time_split(self):
-        mh, plus_layer_name = self._build_split_net()
-        assert mh.layer_names == ['flatten0', 'a_1', 'a_2', 'a_3', 'b_1', 'b_2', plus_layer_name, 'softmax']
-
-        with self.assertLogs() as cm:
-            mh.drop_layer_bottom(num_layers_to_drop=2, drop_layer_names=['b_1'])
-        assert cm.output == ['INFO:root:Dropping flatten0',
-                             'INFO:root:Dropping b_1',
-                             'INFO:root:flatten0, b_1 deleted from model bottom']
-
-        with self.assertRaises(exceptions.ModelError):
-                mh.drop_layer_bottom(num_layers_to_drop=2)
-
-        assert mh.layer_names == ['a_1', 'a_2', 'a_3', 'b_2', plus_layer_name, 'softmax']
-
-        with self.assertLogs() as cm:
-            mh.drop_layer_bottom(num_layers_to_drop=2, drop_layer_names=['a_1', 'b_2'])
-        assert cm.output == ['INFO:root:Dropping a_1',
-                             'INFO:root:Dropping b_2',
-                             'INFO:root:Dropping {} (join node auto-deleted)'.format(plus_layer_name),
-                             'INFO:root:a_1, b_2, {} deleted from model bottom'.format(plus_layer_name)]
-
-        assert mh.layer_names == ['a_2', 'a_3', 'softmax']
-
-        with self.assertLogs() as cm:
-            mh.drop_layer_bottom(num_layers_to_drop=2, drop_layer_names=['a_1', 'b_2'])
-        assert cm.output == ['INFO:root:Dropping a_2',
-                             'INFO:root:Dropping a_3',
-                             'INFO:root:a_2, a_3 deleted from model bottom',
-                             'WARNING:root:Did not use all of drop_layer_names: a_1, b_2']
-
-        assert mh.layer_names == ['softmax']
-
-    def test_drop_layer_bottom_3_at_a_time_split(self):
-        mh, plus_layer_name = self._build_split_net()
-        assert mh.layer_names == ['flatten0', 'a_1', 'a_2', 'a_3', 'b_1', 'b_2', plus_layer_name, 'softmax']
-
-        with self.assertLogs() as cm:
-            mh.drop_layer_bottom(num_layers_to_drop=3, drop_layer_names=['b_1', 'b_2'])
-        assert cm.output == ['INFO:root:Dropping flatten0',
-                             'INFO:root:Dropping b_1',
-                             'INFO:root:Dropping b_2',
-                             'INFO:root:Dropping {} (join node auto-deleted)'.format(plus_layer_name),
-                             'INFO:root:flatten0, b_1, b_2, {} deleted from model bottom'.format(plus_layer_name)]
-
-        assert mh.layer_names == ['a_1', 'a_2', 'a_3', 'softmax']
-
-        with self.assertLogs() as cm:
-            mh.drop_layer_bottom(num_layers_to_drop=3)
-        assert cm.output == ['INFO:root:Dropping a_1',
-                             'INFO:root:Dropping a_2',
-                             'INFO:root:Dropping a_3',
-                             'INFO:root:a_1, a_2, a_3 deleted from model bottom']
-
-        assert mh.layer_names == ['softmax']
-
-    def test_drop_layer_bottom_with_2_joins(self):
-        # Build symbol
-        data = mx.sym.Variable('data')
-
-        fc1_1 = mx.sym.FullyConnected(data=data, num_hidden=5, name='fc1_1')
-        fc1_2 = mx.sym.FullyConnected(data=data, num_hidden=5, name='fc1_2')
-        fc1_3 = mx.sym.FullyConnected(data=data, num_hidden=5, name='fc1_3')
-        fc1_4 = mx.sym.FullyConnected(data=data, num_hidden=5, name='fc1_4')
-        fc2_1 = mx.sym.FullyConnected(data=fc1_1, num_hidden=5, name='fc2_1')
-        fc2_2 = mx.sym.FullyConnected(data=fc1_2, num_hidden=5, name='fc2_2')
-        fc2_3 = mx.sym.FullyConnected(data=fc1_3, num_hidden=5, name='fc2_3')
-        fc2_4 = mx.sym.FullyConnected(data=fc1_4, num_hidden=5, name='fc2_4')
-
-        concat3_1 = mx.sym.concat(fc2_1, fc2_2, name='concat3_1')
-        concat3_2 = mx.sym.concat(fc2_3, fc2_4, name='concat3_2')
-        concat4 = mx.sym.concat(concat3_1, concat3_2, name='concat4')
-
-        softmax = mx.sym.SoftmaxOutput(concat4, name='softmax')
-
-        mh = model_handler.ModelHandler(mx.mod.Module(softmax))
-        assert mh.layer_names == ['fc1_1', 'fc2_1', 'fc1_2', 'fc2_2', 'concat3_1', 'fc1_3', 'fc2_3', 'fc1_4', 'fc2_4',
-                                  'concat3_2', 'concat4', 'softmax']
-
-        mh.drop_layer_bottom(num_layers_to_drop=2, drop_layer_names=['fc1_1', 'fc2_1'])
-        assert mh.layer_names == ['fc1_2', 'fc2_2', 'fc1_3', 'fc2_3', 'fc1_4', 'fc2_4', 'concat3_2', 'concat4',
-                                  'softmax']
-
-        mh.drop_layer_bottom(num_layers_to_drop=2, drop_layer_names=['fc1_2', 'fc2_2'])
-        assert mh.layer_names == ['fc1_3', 'fc2_3', 'fc1_4', 'fc2_4', 'concat3_2', 'softmax']
-
-        mh.drop_layer_bottom(num_layers_to_drop=2, drop_layer_names=['fc1_3', 'fc2_3'])
-        assert mh.layer_names == ['fc1_4', 'fc2_4', 'softmax']
+            mh.drop_layer_bottom(2)
 
     def test_add_layer_top(self):
         # Drop output layer so that layers can be added to top
@@ -542,24 +351,6 @@ class TestModelHandler(TestCase):
         assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 11) == ['relu2']
         assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 12) == ['fc1', 'fc2', 'fc3']
 
-    def test_ambiguous_layer_drop_error_message(self):
-        layer_names = ['layer0', 'layer1']
-
-        assert self.mh._ambiguous_layer_drop_error_message(layer_names, 0) ==\
-            'Found an ambiguous layer (drop layer number: 0). Please choose one from: layer0, layer1'
-
-        assert self.mh._ambiguous_layer_drop_error_message(layer_names, 1) ==\
-            'Found an ambiguous layer (drop layer number: 1). Please choose one from: layer0, layer1'
-
-        assert self.mh._ambiguous_layer_drop_error_message(layer_names, 2) ==\
-            'Found an ambiguous layer (drop layer number: 2). Please choose one from: layer0, layer1'
-
-        assert self.mh._ambiguous_layer_drop_error_message(layer_names, 3) ==\
-            'Found an ambiguous layer (drop layer number: 3). Please choose one from: layer0, layer1'
-
-        assert self.mh._ambiguous_layer_drop_error_message(layer_names, 4) ==\
-            'Found an ambiguous layer (drop layer number: 4). Please choose one from: layer0, layer1'
-
     def test_get_name_of_first_operation(self):
         name = self.mh._get_name_of_first_operation(self.symbol_dict['nodes'])
         assert name == 'conv1'
@@ -569,33 +360,6 @@ class TestModelHandler(TestCase):
             node['op'] = 'null'
         with self.assertRaises(exceptions.ModelError):
             self.mh._get_name_of_first_operation(self.symbol_dict['nodes'])
-
-    def test_get_idx_of_first_node_of_layer(self):
-        assert self.mh._get_idx_of_first_node_of_layer(3, self.arg_nodes) == 1
-        assert self.mh._get_idx_of_first_node_of_layer(4, self.arg_nodes) == 4
-        assert self.mh._get_idx_of_first_node_of_layer(7, self.arg_nodes) == 5
-        assert self.mh._get_idx_of_first_node_of_layer(10, self.arg_nodes) == 10
-        assert self.mh._get_idx_of_first_node_of_layer(15, self.arg_nodes) == 14
-
-    def test_get_layer_node_idx(self):
-        idx = self.mh._get_layer_node_idx(self.symbol_dict['nodes'], 'fullyconnected0')
-        assert idx == 13
-
-        with self.assertRaises(ValueError):
-            self.mh._get_layer_node_idx(self.symbol_dict['nodes'], 'nonexistentlayer')
-
-    def test_delete_layer_nodes_given_operator_node(self):
-        self._test_delete_layer_nodes_given_operator_node_individual(3, 3)
-        self._test_delete_layer_nodes_given_operator_node_individual(8, 1)
-        self._test_delete_layer_nodes_given_operator_node_individual(13, 3)
-        self._test_delete_layer_nodes_given_operator_node_individual(15, 2)
-
-    def _test_delete_layer_nodes_given_operator_node_individual(self, idx, expected_diff):
-        symbol_dict = copy.deepcopy(self.symbol_dict)  # deep copy to avoid modifiying original dict
-        original_length = len(symbol_dict['nodes'])
-        output_dict = self.mh._delete_layer_nodes_given_operator_node(symbol_dict, idx)
-
-        assert len(output_dict['nodes']) == original_length - expected_diff
 
     def test_get_arg_nodes(self):
         assert self.mh._get_arg_nodes(self.nodes) == [0, 1, 2, 5, 6, 11, 12, 14]
@@ -610,35 +374,6 @@ class TestModelHandler(TestCase):
         assert self.mh._get_heads(self.nodes, 'softmaxoutput1') in [[[15, 0, 0]], [[15, 0]]]
         assert self.mh._get_heads(self.nodes[-11:], 'softmaxoutput1') in [[[10, 0, 0]], [[10, 0]]]
         assert self.mh._get_heads(self.nodes[-7:], 'softmaxoutput1') in [[[6, 0, 0]], [[6, 0]]]
-
-    def test_get_name_input_map(self):
-        expected_output = {'conv2': ['act1', 'conv2_weight', 'conv2_bias'], 'flatten1': ['pool1'], 'conv1_bias': [],
-                           'softmaxoutput1_label': [],
-                           'fullyconnected0': ['flatten1', 'fullyconnected0_weight', 'fullyconnected0_bias'],
-                           'softmaxoutput1': ['fullyconnected0', 'softmaxoutput1_label'], 'data': [],
-                           'conv2_weight': [], 'fullyconnected0_bias': [], 'pool1': ['act2'], 'act2': ['conv2'],
-                           'conv1': ['data', 'conv1_weight', 'conv1_bias'], 'fullyconnected0_weight': [],
-                           'conv2_bias': [], 'act1': ['conv1'], 'conv1_weight': []}
-
-        assert self.mh._get_name_input_map(self.nodes) == expected_output
-
-    def test_update_inputs(self):
-        nodes = self.nodes[-12:]
-        nodes.insert(0, {'op': 'null', 'name': 'data', 'inputs': []})
-        drop_layer_name = 'conv1'
-        join_deleted = False
-        nodes = self.mh._update_inputs(nodes, self.nodes, drop_layer_name, join_deleted, None)
-
-        expected_inputs = [[], [[0, 0, 0]], [], [], [[1, 0, 0], [2, 0, 0], [3, 0, 0]], [[4, 0, 0]], [[5, 0, 0]],
-                           [[6, 0, 0]], [], [], [[7, 0, 0], [8, 0, 0], [9, 0, 0]], [],  [[10, 0, 0], [11, 0, 0]]]
-
-        for node, expected_input in zip(nodes, expected_inputs):
-            if len(expected_input) == 0:
-                assert node['inputs'] == expected_input
-            else:
-                assert len(node['inputs']) == len(expected_input)
-                for i, _ in enumerate(expected_input):
-                    assert node['inputs'][i][0] == expected_input[i][0]
 
     def test_get_output_layer_names(self):
         self.mh._get_output_layer_names(self.symbol_dict) == ['softmaxoutput1']
@@ -680,32 +415,6 @@ class TestModelHandler(TestCase):
         ids = self.mh._get_layer_ids_with_node_zero_as_input(symbol_dict['nodes'])
 
         assert ids == [3, 7]
-
-    def test_get_join_idx(self):
-        softmax = self._build_symbol_with_nodes_with_zero_input()
-        symbol_dict = self.mh._get_symbol_dict(softmax)
-
-        idx = self.mh._get_join_idx([3, 7], symbol_dict['nodes'], symbol_dict['nodes'], 'fc1a')
-
-        assert idx == 9
-
-    def test_get_layer_name_ambiguous(self):
-        available_layer_names_one = ['single_layer']
-        available_layer_names_many = ['layer_1', 'layer_2']
-        reference_layer_names = ['layer_1']
-        n = 2
-
-        assert self.mh._get_layer_name_ambiguous(available_layer_names_one, reference_layer_names, n) is None
-        assert self.mh._get_layer_name_ambiguous(available_layer_names_many, reference_layer_names, n) == 'layer_1'
-        assert self.mh._get_layer_name_ambiguous(available_layer_names_one, [], n) is None
-        assert self.mh._get_layer_name_ambiguous(available_layer_names_one, None, n) is None
-
-        with self.assertRaises(exceptions.ModelError):
-            self.mh._get_layer_name_ambiguous(available_layer_names_many, [], n)
-        with self.assertRaises(exceptions.ModelError):
-            self.mh._get_layer_name_ambiguous(available_layer_names_many, None, n)
-        with self.assertRaises(exceptions.ModelError):
-            self.mh._get_layer_name_ambiguous(available_layer_names_many, ['layer_X'], n)
 
     @staticmethod
     def create_csv_iterator(batch_size=1):
