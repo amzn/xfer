@@ -42,9 +42,10 @@ class NeuralNetworkRepurposer(Repurposer):
     :param optimizer_params: Optimizer params required by MXNet to train target neural network.
            Default: {'learning_rate': 1e-3}
     :type optimizer_params: dict(str, float)
-    :param batch_end_callback: Each callback will be called with a BatchEndParam.
+    :param batch_end_callback: Called at the end of each batch. Each callback will be called with a BatchEndParam.
     :type batch_end_callback: function or list of functions
-    :param epoch_end_callback: Each callback will be called with the current epoch, symbol, arg_params and aux_params.
+    :param epoch_end_callback: Called at the end of each epoch. Each callback will be called with the current epoch,
+                               symbol, arg_params and aux_params.
     :type epoch_end_callback: function or list of functions
     """
     def __init__(self, source_model: mx.mod.Module, context_function=mx.context.cpu, num_devices=1, batch_size=64,
