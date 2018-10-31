@@ -48,12 +48,16 @@ class NeuralNetworkRandomFreezeRepurposer(NeuralNetworkRepurposer):
     :param optimizer_params: Optimizer params required by MXNet to train target neural network.
            Default: {'learning_rate': 1e-3}
     :type optimizer_params: dict(str, float)
+    :param batch_end_callback: Each callback will be called with a BatchEndParam.
+    :type batch_end_callback: function or list of functions
+    :param epoch_end_callback: Each callback will be called with the current epoch, symbol, arg_params and aux_params.
+    :type epoch_end_callback: function or list of functions
     """
     def __init__(self, source_model: mx.mod.Module, target_class_count, fixed_layers, random_layers,
                  num_layers_to_drop=2, context_function=mx.context.cpu, num_devices=1, batch_size=64, num_epochs=5,
-                 optimizer='sgd', optimizer_params=None):
+                 optimizer='sgd', optimizer_params=None, batch_end_callback=None, epoch_end_callback=None):
         super().__init__(source_model, context_function, num_devices, batch_size, num_epochs,
-                         optimizer, optimizer_params)
+                         optimizer, optimizer_params, batch_end_callback, epoch_end_callback)
 
         self.target_class_count = target_class_count
         self.fixed_layers = fixed_layers

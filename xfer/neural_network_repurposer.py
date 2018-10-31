@@ -42,17 +42,26 @@ class NeuralNetworkRepurposer(Repurposer):
     :param optimizer_params: Optimizer params required by MXNet to train target neural network.
            Default: {'learning_rate': 1e-3}
     :type optimizer_params: dict(str, float)
+    :param batch_end_callback: Each callback will be called with a BatchEndParam.
+    :type batch_end_callback: function or list of functions
+    :param epoch_end_callback: Each callback will be called with the current epoch, symbol, arg_params and aux_params.
+    :type epoch_end_callback: function or list of functions
     """
     def __init__(self, source_model: mx.mod.Module, context_function=mx.context.cpu, num_devices=1, batch_size=64,
-                 num_epochs=5, optimizer='sgd', optimizer_params=None):
+                 num_epochs=5, optimizer='sgd', optimizer_params=None, batch_end_callback=None,
+                 epoch_end_callback=None):
         super(NeuralNetworkRepurposer, self).__init__(source_model, context_function, num_devices)
         self.batch_size = batch_size
         self.num_epochs = num_epochs
         self._save_source_model_default = False
         self.optimizer = optimizer
         self.optimizer_params = optimizer_params
+        self.batch_end_callback = batch_end_callback
+        self.epoch_end_callback = epoch_end_callback
         if self.optimizer_params is None:
             self.optimizer_params = {keys.LEARNING_RATE: consts.DEFAULT_LEARNING_RATE}
+        if self.batch_end_callback is None:
+            self.batch_end_callback = mx.callback.Speedometer(self.batch_size)
 
     def get_params(self):
         """
@@ -103,7 +112,8 @@ class NeuralNetworkRepurposer(Repurposer):
                   kvstore='device',
                   eval_metric='acc',
                   allow_missing=True,
-                  batch_end_callback=mx.callback.Speedometer(self.batch_size),
+                  batch_end_callback=self.batch_end_callback,
+                  epoch_end_callback=self.epoch_end_callback,
                   initializer=mx.init.Xavier(rnd_type='gaussian', factor_type='in', magnitude=2),
                   num_epoch=self.num_epochs)
 
