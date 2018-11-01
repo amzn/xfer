@@ -317,9 +317,9 @@ class TestModelHandler(TestCase):
     def test_get_names_of_inputs_to_layer(self):
         symbol_dict = self.mh._get_symbol_dict(self.mh.symbol)
 
-        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 7) == ['act1']
-        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 8) == ['conv2']
-        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 15) == ['fullyconnected0']
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 7) == [4]
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 8) == [7]
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 15) == [13]
 
     def test_get_names_of_inputs_to_layer_split_2(self):
         data = mx.sym.Variable('data')
@@ -332,9 +332,9 @@ class TestModelHandler(TestCase):
 
         symbol_dict = self.mh._get_symbol_dict(plus)
 
-        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 7) == ['relu1']
-        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 8) == ['fc2']
-        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 12) == ['fc2', 'fc3']
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 7) == [4]
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 8) == [7]
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 12) == [7, 11]
 
     def test_get_names_of_inputs_to_layer_split_3(self):
         data = mx.sym.Variable('data')
@@ -347,19 +347,9 @@ class TestModelHandler(TestCase):
 
         symbol_dict = self.mh._get_symbol_dict(concat)
 
-        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 4) == ['fc1']
-        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 11) == ['relu2']
-        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 12) == ['fc1', 'fc2', 'fc3']
-
-    def test_get_name_of_first_operation(self):
-        name = self.mh._get_name_of_first_operation(self.symbol_dict['nodes'])
-        assert name == 'conv1'
-
-    def test_get_name_of_first_operation_no_ops(self):
-        for node in self.symbol_dict['nodes']:
-            node['op'] = 'null'
-        with self.assertRaises(exceptions.ModelError):
-            self.mh._get_name_of_first_operation(self.symbol_dict['nodes'])
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 4) == [3]
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 11) == [8]
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 12) == [3, 7, 11]
 
     def test_get_arg_nodes(self):
         assert self.mh._get_arg_nodes(self.nodes) == [0, 1, 2, 5, 6, 11, 12, 14]
@@ -408,13 +398,24 @@ class TestModelHandler(TestCase):
         softmax = mx.sym.SoftmaxOutput(data=plus, name='softmax')
         return softmax
 
-    def test_get_layer_ids_with_node_zero_as_input(self):
+    def test_get_layers_with_node_idx_as_input(self):
         softmax = self._build_symbol_with_nodes_with_zero_input()
         symbol_dict = self.mh._get_symbol_dict(softmax)
 
-        ids = self.mh._get_layer_ids_with_node_zero_as_input(symbol_dict['nodes'])
-
-        assert ids == [3, 7]
+        expected_ids = [
+            [3, 7],
+            [3],
+            [3],
+            [4],
+            [9],
+            [7],
+            [7],
+            [8],
+            [9],
+            [11]
+        ]
+        for i in range(10):
+            assert self.mh._get_layers_with_node_idx_as_input(i, symbol_dict['nodes']) == expected_ids[i]
 
     @staticmethod
     def create_csv_iterator(batch_size=1):

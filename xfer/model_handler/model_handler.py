@@ -50,26 +50,21 @@ class ModelHandler(object):
         :param int n: Number of layers to remove from model output.
         """
         network_symbol = self.symbol
+        network = self._get_symbol_dict(network_symbol)
 
         self._assert_drop_layer_valid(num_layers_to_drop)
         self._assert_model_has_single_output(self._get_symbol_dict(network_symbol))
 
         layers_dropped = []
+        last_layer = len(network[consts.NODES]) - 1
         for n in range(num_layers_to_drop):
-            # Get updated symbol dictionary
-            network = self._get_symbol_dict(network_symbol)
-            last_layer_input_names = self._get_names_of_inputs_to_layer(symbol_dict=network,
-                                                                        node_idx=len(network[consts.NODES]) - 1)
-            self._assert_layer_drop_not_ambiguous(layer_names=last_layer_input_names, layer_drop_number=n)
+            last_layer_inputs = self._get_names_of_inputs_to_layer(symbol_dict=network, node_idx=last_layer)
+            self._assert_layer_drop_not_ambiguous(possible_layers_to_drop=last_layer_inputs, layer_drop_number=n)
+            # There will only be one value in possible_layers_to_drop
+            layers_dropped.append(network[consts.NODES][last_layer][consts.NAME])
+            last_layer = last_layer_inputs[0]
 
-            # New last layer is simply the penultimate layer
-            for node in reversed(network[consts.NODES][:-1]):
-                if node[consts.OPERATION] != consts.NO_OP:
-                    new_last_layer = node[consts.NAME]
-                    break
-
-            layers_dropped.append(network[consts.NODES][-1][consts.NAME])  # Name of last layer
-            network_symbol = network_symbol.get_internals()[new_last_layer + consts.OUTPUT]
+        network_symbol = network_symbol.get_internals()[network[consts.NODES][last_layer][consts.NAME] + consts.OUTPUT]
 
         logging.info('{} deleted from model top'.format(', '.join(layers_dropped)))
         self.update_sym(network_symbol)
@@ -81,32 +76,28 @@ class ModelHandler(object):
         :param int n: Number of layers to remove from model input.
         """
         network = self._get_symbol_dict(self.symbol)
+        output_layer_names = self._get_output_layer_names(network)
 
         # Validate the action
         self._assert_drop_layer_valid(num_layers_to_drop)
 
         layers_dropped = []
+        first_layer = 0
         for n in range(num_layers_to_drop):
-            output_layer_names = self._get_output_layer_names(network)
-            nodes_using_zero_ids = self._get_layer_ids_with_node_zero_as_input(network[consts.NODES])
-            nodes_using_zero_ids_names = [v[consts.NAME] for c, v in enumerate(network[consts.NODES])
-                                          if c in nodes_using_zero_ids]
-            self._assert_layer_drop_not_ambiguous(layer_names=nodes_using_zero_ids_names, layer_drop_number=n)
-            # The dropped layer is simply the first layer
-            drop_layer_name = self._get_name_of_first_operation(network[consts.NODES])
-            # Find node index of operator being deleted
-            for nodes_to_delete, node in enumerate(network[consts.NODES]):
-                if node[consts.OPERATION] != consts.NO_OP:
-                    break
-            shifted_input_network_nodes = self._shift_input_indices(network[consts.NODES][nodes_to_delete+1:],
-                                                                    shift_constant=-nodes_to_delete)
-            # Concatentate input node and remaining network nodes
-            network[consts.NODES] = [network[consts.NODES][0]] + shifted_input_network_nodes
-            # Update symbol dictionary attributes
-            network[consts.ARG_NODES] = self._get_arg_nodes(network[consts.NODES])
-            network[consts.HEADS] = self._get_heads(nodes=network[consts.NODES],
-                                                    output_layer_names=output_layer_names)
-            layers_dropped.append(drop_layer_name)
+            layers_with_first_layer_as_input = self._get_layers_with_node_idx_as_input(first_layer,
+                                                                                       network[consts.NODES])
+            self._assert_layer_drop_not_ambiguous(possible_layers_to_drop=layers_with_first_layer_as_input,
+                                                  layer_drop_number=n)
+            # There will only be one value in possible_layers_to_drop
+            layers_dropped.append(network[consts.NODES][layers_with_first_layer_as_input[0]][consts.NAME])
+            first_layer = layers_with_first_layer_as_input[0]
+        shifted_input_network_nodes = self._shift_input_indices(network[consts.NODES][first_layer+1:],
+                                                                shift_constant=-first_layer)
+        # Concatentate input node and remaining network nodes
+        network[consts.NODES] = [network[consts.NODES][0]] + shifted_input_network_nodes
+        # Update symbol dictionary attributes
+        network[consts.ARG_NODES] = self._get_arg_nodes(network[consts.NODES])
+        network[consts.HEADS] = self._get_heads(nodes=network[consts.NODES], output_layer_names=output_layer_names)
         sym = self._get_symbol(network)
 
         logging.info('{} deleted from model bottom'.format(', '.join(layers_dropped)))
@@ -184,11 +175,10 @@ class ModelHandler(object):
         logging.info('Added {} to model bottom'.format(', '.join(added_layer_names)))
 
     @staticmethod
-    def _assert_layer_drop_not_ambiguous(layer_names, layer_drop_number):
-        if len(layer_names) > 1:
+    def _assert_layer_drop_not_ambiguous(possible_layers_to_drop, layer_drop_number):
+        if len(possible_layers_to_drop) > 1:
             raise exceptions.ModelError('ModelHandler does not support dropping layers where there is ambiguity.' +
-                                        'On layer drop {}, the following layers can all be dropped: {}'.format(
-                                            layer_drop_number, ', '.join(layer_names)))
+                                        'Layer drop: {}.'.format(layer_drop_number))
 
     @staticmethod
     def _shift_input_indices(nodes, shift_constant):
@@ -199,16 +189,6 @@ class ModelHandler(object):
             for node_input in node[consts.INPUTS]:
                 node_input[0] += shift_constant
         return nodes
-
-    @staticmethod
-    def _get_name_of_first_operation(nodes):
-        """
-        Return the name of the first operation layer.
-        """
-        for node in nodes:
-            if node[consts.OPERATION] != consts.NO_OP:
-                return node[consts.NAME]
-        raise exceptions.ModelError('nodes does not contain any operation nodes')
 
     @staticmethod
     def _get_arg_nodes(nodes):
@@ -266,22 +246,23 @@ class ModelHandler(object):
             # Do not add null layers to list of inputs
             if symbol_dict[consts.NODES][i[0]][consts.OPERATION] != consts.NO_OP:
                 inputs_to_layer.append(i[0])
-        return [node[consts.NAME] for idx, node in enumerate(symbol_dict[consts.NODES])
-                if idx in inputs_to_layer]
+        return inputs_to_layer
 
     @staticmethod
-    def _get_layer_ids_with_node_zero_as_input(nodes):
+    def _get_layers_with_node_idx_as_input(node_idx, nodes):
         """
-        Get list of ids of layers that have the zeroth node as an input.
+        Get list of ids of layers that have the node_idx-th node as an input.
         """
-        layer_ids = []
+        layer_names = []
         for idx, node in enumerate(nodes):
+            if node[consts.OPERATION] == consts.NO_OP:
+                continue
             for input_list in node[consts.INPUTS]:
-                if input_list[0] == 0:
-                    layer_ids.append(idx)
+                if input_list[0] == node_idx:
+                    layer_names.append(idx)
                     # Avoid counting twice in the case where a node has two inputs from 0 node
                     break
-        return layer_ids
+        return layer_names
 
     def get_module(self, iterator, fixed_layer_parameters=None, random_layer_parameters=None):
         """
