@@ -51,8 +51,6 @@ The code can be found on our `Github project page <https://github.com/amzn/xfer/
   :caption: For developers
   
   demos/xfer-custom-repurposers.ipynb
-  add_to_layer_factory.rst
-
 
 
 Indices and tables
