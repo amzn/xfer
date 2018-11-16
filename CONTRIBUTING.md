@@ -26,7 +26,7 @@ If you're wishing for a feature that doesn't exist yet in Xfer, there are probab
 
 If you're thinking about adding code to Xfer, here are some guidelines to get you started.
 
-* If the change is a major feature, create a [CIP](link to CIP definition) in the docs/CIPs folder and post it as a PR, optionally with a prototype implementation of your proposed changes. This is to get community feedback on the changes and document the design reasoning of Xfer for future reference.
+* If the change is a major feature, create an issue using the [feature request template](https://github.com/amzn/xfer/issues/new?template=feature_request.md) to get community feedback on the proposed changes and document the design reasoning of Xfer for future reference.
 
 * Keep pull requests small, preferably one feature per pull request. This lowers the bar to entry for a reviewer, and keeps feedback focused for each feature.
 
@@ -73,9 +73,7 @@ Before submitting the pull request, please go through this checklist to make the
 * Do all public functions have docstrings including examples? If you added a new module, did you add it to the Sphinx ```api.rst``` file in the ```doc``` folder?
 * Is the code style correct (PEP8)? You can verify this by running `flake8` from the top level directory.
 * Is the commit message formatted correctly?
-* If this is a large addition, is there a tutorial or more extensive module-level description? Did you discuss the addition in a [CIP](CIP)? Is there an issue related to the change? If so, please link the issue or CIP.
-
-
+* If this is a large addition, is there a tutorial or more extensive module-level description? Did you discuss the addition in a [feature request](https://github.com/amzn/xfer/issues/new?template=feature_request.md) and provide a link to it?
 ## Setting up a development environment
 
 ### Building the code
