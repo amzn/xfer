@@ -12,7 +12,7 @@
 #   permissions and limitations under the License.
 # ==============================================================================
 """
-Model Handler constants
+Model Handler constants.
 """
 
 from enum import Enum
@@ -28,10 +28,13 @@ LABEL_IDX = -2
 DATA = 'data'
 N = 'n'
 SELF = 'self'
-LAYER = 'layer_factory_list'
 NAME = 'name'
 ATTRIBUTES = 'attrs'
 INPUTS = 'inputs'
+ARG_NODES = 'arg_nodes'
+NODE_PTR = 'node_row_ptr'
+HEADS = 'heads'
+OUTPUT = '_output'
 
 
 class LayerType(Enum):

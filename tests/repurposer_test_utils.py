@@ -19,6 +19,8 @@ import zipfile
 import random
 import glob
 
+MXNET_MODEL_ZOO_PATH = 'http://data.mxnet.io/models/imagenet/'
+
 
 class RepurposerTestUtils:
     ERROR_INCORRECT_INPUT = 'Test case assumes incorrect input'
@@ -83,16 +85,20 @@ class RepurposerTestUtils:
     @staticmethod
     def download_vgg19():
         # Download vgg19 (trained on imagenet)
-        path = 'http://data.mxnet.io/models/imagenet/'
-        [mx.test_utils.download(path+'vgg/vgg19-0000.params'),
-         mx.test_utils.download(path+'vgg/vgg19-symbol.json')]
+        [mx.test_utils.download(MXNET_MODEL_ZOO_PATH+'vgg/vgg19-0000.params'),
+         mx.test_utils.download(MXNET_MODEL_ZOO_PATH+'vgg/vgg19-symbol.json')]
 
     @staticmethod
     def download_squeezenet():
         # Download squeezenet (trained on imagenet)
-        path = 'http://data.mxnet.io/models/imagenet/'
-        [mx.test_utils.download(path+'squeezenet/squeezenet_v1.1-0000.params'),
-         mx.test_utils.download(path+'squeezenet/squeezenet_v1.1-symbol.json')]
+        [mx.test_utils.download(MXNET_MODEL_ZOO_PATH+'squeezenet/squeezenet_v1.1-0000.params'),
+         mx.test_utils.download(MXNET_MODEL_ZOO_PATH+'squeezenet/squeezenet_v1.1-symbol.json')]
+
+    @staticmethod
+    def download_resnet():
+        # Download reset (trained on imagenet)
+        [mx.test_utils.download(MXNET_MODEL_ZOO_PATH+'resnet/101-layers/resnet-101-0000.params'),
+         mx.test_utils.download(MXNET_MODEL_ZOO_PATH+'resnet/101-layers/resnet-101-symbol.json')]
 
     @staticmethod
     def unzip_mnist_sample():
