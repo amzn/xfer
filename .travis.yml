@@ -58,7 +58,6 @@ jobs:
       python: '3.6'
       if: branch != master
     - stage: notebooks
-      language: generic
       python: '3.6'
       script:
         - sudo apt-get install graphviz
