@@ -7,11 +7,12 @@ import nbformat
 
 
 demo_path = 'docs/demos/'
-demo_notebooks = [filename for filename in os.listdir(demo_path)
-                  if (filename.endswith('.ipynb') and 'hpo' not in filename)]  # run hpo notebook in a separate test
+
 hpo_notebook = [filename for filename in os.listdir(demo_path) if (filename.endswith('.ipynb') and 'hpo' in filename)]
 gluon_notebook = [fname for fname in os.listdir(demo_path) if (fname.endswith('.ipynb') and 'gluon' in fname)]
-
+# Exclude other notebooks because these will be tested separately
+demo_notebooks = [filename for filename in os.listdir(demo_path)
+                  if (filename.endswith('.ipynb') and filename not in hpo_notebook and filename not in gluon_notebook)]
 
 original_path = os.getcwd()
 
