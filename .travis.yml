@@ -64,13 +64,10 @@ jobs:
         - pip install -r docs/demos/requirements.txt
         - travis_wait 40 pytest --durations=0 --notebook
     - script:
-        - brew install graphviz
+        - sudo apt-get install graphviz
         - pip install -r docs/demos/requirements.txt
         - travis_wait 40 pytest --durations=0 --notebook_gluon
-      os: osx
-      language: generic
       python: '3.6'
-      env: PYTHON=3.6.6
       name: "Gluon notebooks"
     - stage: release
       if: branch = master
