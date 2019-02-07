@@ -14,7 +14,7 @@
 import pytest
 
 
-test_flags = ['notebook', 'notebook_hpo', 'integration']
+test_flags = ['notebook', 'notebook_hpo', 'notebook_gluon', 'integration']
 
 
 def pytest_addoption(parser):

@@ -69,6 +69,12 @@ jobs:
         - travis_wait 40 pytest --durations=0 --notebook_hpo
       python: '3.6'
       name: "HPO notebook"
+    - script:
+        - sudo apt-get install graphviz
+        - pip install -r docs/demos/requirements.txt
+        - travis_wait 40 pytest --durations=0 --notebook_gluon
+      python: '3.6'
+      name: "Gluon notebooks"
     - stage: release
       if: branch = master
       python: '3.6' # Official supported Python dist.
