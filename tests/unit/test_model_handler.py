@@ -11,7 +11,7 @@
 #   express or implied. See the License for the specific language governing
 #   permissions and limitations under the License.
 # ==============================================================================
-from unittest import mock, TestCase
+from unittest import TestCase
 
 import json
 import os
@@ -20,7 +20,9 @@ import numpy as np
 from collections import OrderedDict
 
 from xfer import model_handler
-from xfer.model_handler import consts, layer_factory, exceptions
+from xfer.model_handler import consts, exceptions
+
+from ..repurposer_test_utils import RepurposerTestUtils
 
 
 class TestModelHandler(TestCase):
@@ -34,12 +36,27 @@ class TestModelHandler(TestCase):
                         [1, 'ant/image_0002.jpg'], [2, 'anchor/image_0001.jpg'], [2, 'anchor/image_0002.jpg']]
         self.image_iter = mx.image.ImageIter(2, (3, 224, 224), imglist=self.imglist, path_root='tests/data/test_images',
                                              label_name='softmaxoutput1_label', data_name=self.data_name)
-
+        self.symbol_dict = json.loads(self.mh.symbol.tojson())
+        self.nodes = self.symbol_dict['nodes']
+        self.arg_nodes = self.symbol_dict['arg_nodes']
+        self.heads = self.symbol_dict['heads']
         self.act1_id = 4
         self.conv2_id = 7
 
     def tearDown(self):
         del self.mh
+
+    def test_resnet(self):
+        """Assert that ModelHandler can drop layers from resnet without errors"""
+        RepurposerTestUtils.download_resnet()
+        mod = mx.mod.Module.load('resnet-101', 0)
+        mh = model_handler.ModelHandler(mod)
+        old_layer_names = mh.layer_names
+
+        mh.drop_layer_top()
+        mh.drop_layer_bottom()
+
+        assert sorted(list(set(old_layer_names).difference(set(mh.layer_names)))) == sorted(['bn_data', 'softmax'])
 
     def test_constructor_binded_module(self):
         # Assert module that is binded can be used to init a ModelHandler object and can add/drop layers
@@ -91,6 +108,36 @@ class TestModelHandler(TestCase):
         with self.assertRaises(model_handler.exceptions.ModelError):
             self.mh.drop_layer_top(8)
 
+    def test_drop_layer_top_two_outputs(self):
+        # Build a symbol with two softmax output layers
+        data = mx.sym.Variable('data')
+        fc1 = mx.sym.FullyConnected(data=data, name='fc1', num_hidden=128)
+        act1 = mx.sym.Activation(data=fc1, name='relu1', act_type="relu")
+        fc2 = mx.sym.FullyConnected(data=act1, name='fc2', num_hidden=64)
+        act2 = mx.sym.Activation(data=fc2, name='relu2', act_type="relu")
+        fc3 = mx.sym.FullyConnected(data=act2, name='fc3', num_hidden=10)
+
+        fc4 = mx.sym.FullyConnected(data=fc3, name='fc4_1', num_hidden=10)
+        sm1 = mx.sym.SoftmaxOutput(data=fc4, name='softmax1')
+        fc5 = mx.sym.FullyConnected(data=fc3, name='fc4_2', num_hidden=10)
+        sm2 = mx.sym.SoftmaxOutput(data=fc5, name='softmax2')
+
+        softmax = mx.sym.Group([sm1, sm2])
+
+        mod = mx.mod.Module(softmax, label_names=['softmax1_label', 'softmax2_label'])
+        mh = model_handler.ModelHandler(mod)
+
+        with self.assertRaises(exceptions.ModelError):
+            mh.drop_layer_top()
+
+    def test_drop_layer_top_split(self):
+        mh, plus_layer_name = self._build_split_net()
+        mh.drop_layer_top()
+        with self.assertRaises(exceptions.ModelError):
+            mh.drop_layer_top()
+        with self.assertRaises(exceptions.ModelError):
+            mh.drop_layer_top(2)
+
     def test_drop_layer_bottom_1(self):
         assert 'conv1' in list(self.mh.layer_type_dict.keys())
 
@@ -112,6 +159,7 @@ class TestModelHandler(TestCase):
 
         for layer_name in ['conv1', 'act1', 'conv2']:
             assert layer_name not in list(self.mh.layer_type_dict.keys())
+
         assert set(outputs_pre).symmetric_difference(set(outputs_post)) == {'conv1_bias', 'conv1_weight',
                                                                             'conv1_output', 'act1_output',
                                                                             'conv2_bias',  'conv2_output',
@@ -121,25 +169,38 @@ class TestModelHandler(TestCase):
         with self.assertRaises(model_handler.exceptions.ModelError):
             self.mh.drop_layer_bottom(8)
 
-    def test_drop_layer_bottom_no_first_layer(self):
-        with open('tests/data/symbol_dict.json') as json_data:
-            sym_dict = json.load(json_data)
-        sym_dict[consts.NODES] = [node for node in sym_dict[consts.NODES] if node[consts.OPERATION] == consts.NO_OP]
+    @staticmethod
+    def _build_split_net():
+        """Instantiate MH for a model that diverges into two and then joins back into one."""
+        data = mx.sym.var('data')
+        data = mx.sym.flatten(data=data, name='flatten0')
+        fc1 = mx.sym.FullyConnected(data, num_hidden=5, name='a_1')
+        fc2 = mx.sym.FullyConnected(fc1, num_hidden=5, name='a_2')
+        fc3 = mx.sym.FullyConnected(fc2, num_hidden=5, name='a_3')
+        fc2 = mx.sym.FullyConnected(data, num_hidden=5, name='b_1')
+        fc2b = mx.sym.FullyConnected(fc2, num_hidden=5, name='b_2')
+        plus = fc3.__add__(fc2b)
 
-        with mock.patch('xfer.model_handler.ModelHandler._get_symbol_dict', return_value=sym_dict):
-            with self.assertRaises(model_handler.exceptions.ModelError):
-                self.mh.drop_layer_bottom()
+        softmax = mx.sym.SoftmaxOutput(plus, name='softmax')
+        mod = mx.mod.Module(softmax)
+        mh = model_handler.ModelHandler(mod)
 
-    def test_add_layer_top_model_error(self):
-        # Assert model error raised when a layer is added above an output layer
-        layer1 = layer_factory.FullyConnected(name='fc1', num_hidden=5)
-        with self.assertRaises(model_handler.exceptions.ModelError):
-            self.mh.add_layer_top([layer1])
+        plus_layer_name = mh.layer_names[6]
+
+        return mh, plus_layer_name
+
+    def test_drop_layer_bottom_split(self):
+        mh, _ = self._build_split_net()
+        mh.drop_layer_bottom()
+        with self.assertRaises(exceptions.ModelError):
+            mh.drop_layer_bottom()
+        with self.assertRaises(exceptions.ModelError):
+            mh.drop_layer_bottom(2)
 
     def test_add_layer_top(self):
         # Drop output layer so that layers can be added to top
         self.mh.drop_layer_top()
-        layer1 = layer_factory.FullyConnected(name='fc1', num_hidden=5)
+        layer1 = mx.sym.FullyConnected(name='fc1', num_hidden=5)
         assert 'fc1' not in list(self.mh.layer_type_dict.keys())
 
         outputs_pre = self.mh.symbol.get_internals().list_outputs()
@@ -151,8 +212,8 @@ class TestModelHandler(TestCase):
 
     def test_add_layer_top_2(self):
         self.mh.drop_layer_top()
-        layer1 = layer_factory.FullyConnected(name='fc1', num_hidden=5)
-        layer2 = layer_factory.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
+        layer1 = mx.sym.FullyConnected(name='fc1', num_hidden=5)
+        layer2 = mx.sym.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
         for layer_name in ['fc1', 'conv1_1']:
             assert layer_name not in list(self.mh.layer_type_dict.keys())
 
@@ -168,8 +229,8 @@ class TestModelHandler(TestCase):
 
     def test_add_layer_top_list(self):
         self.mh.drop_layer_top()
-        layer1 = layer_factory.FullyConnected(name='fc1', num_hidden=5)
-        layer2 = layer_factory.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
+        layer1 = mx.sym.FullyConnected(name='fc1', num_hidden=5)
+        layer2 = mx.sym.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
         for layer_name in ['fc1', 'conv1_1']:
             assert layer_name not in list(self.mh.layer_type_dict.keys())
 
@@ -182,14 +243,14 @@ class TestModelHandler(TestCase):
         assert outputs_post == outputs_pre + ['fc1_weight', 'fc1_bias', 'fc1_output', 'conv1_1_weight', 'conv1_1_bias',
                                               'conv1_1_output']
 
-    def test_add_layer_bottom_output_layer(self):
-        # Assert that adding an output layer to the bottom of the model raises a model error
-        layer1 = layer_factory.SoftmaxOutput(name='softmax')
-        with self.assertRaises(model_handler.exceptions.ModelError):
-            self.mh.add_layer_bottom([layer1])
+    def test_add_layer_top_over_output(self):
+        # Assert model error raised when a layer is added above an output layer
+        layer = mx.sym.FullyConnected(num_hidden=5)
+        with self.assertRaises(exceptions.ModelError):
+            self.mh.add_layer_top(layer)
 
     def test_add_layer_bottom(self):
-        layer1 = layer_factory.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
+        layer1 = mx.sym.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
         assert 'conv1_1' not in list(self.mh.layer_type_dict.keys())
 
         outputs_pre = self.mh.symbol.get_internals().list_outputs()
@@ -200,8 +261,8 @@ class TestModelHandler(TestCase):
         assert outputs_post == [self.data_name, 'conv1_1_weight', 'conv1_1_bias', 'conv1_1_output'] + outputs_pre[1:]
 
     def test_add_layer_bottom_2(self):
-        layer1 = layer_factory.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
-        layer2 = layer_factory.FullyConnected(name='fc1', num_hidden=10)
+        layer1 = mx.sym.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
+        layer2 = mx.sym.FullyConnected(name='fc1', num_hidden=10)
         for layer_name in ['fc1', 'conv1_1']:
             assert layer_name not in list(self.mh.layer_type_dict.keys())
 
@@ -216,8 +277,8 @@ class TestModelHandler(TestCase):
                                 'conv1_1_bias', 'conv1_1_output'] + outputs_pre[1:]
 
     def test_add_layer_bottom_list(self):
-        layer1 = layer_factory.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
-        layer2 = layer_factory.FullyConnected(name='fc1', num_hidden=10)
+        layer1 = mx.sym.Convolution(name='conv1_1', kernel=(3, 3), num_filter=10)
+        layer2 = mx.sym.FullyConnected(name='fc1', num_hidden=10)
         for layer_name in ['fc1', 'conv1_1']:
             assert layer_name not in list(self.mh.layer_type_dict.keys())
 
@@ -229,6 +290,132 @@ class TestModelHandler(TestCase):
             assert layer_name in list(self.mh.layer_type_dict.keys())
         assert outputs_post == [self.data_name, 'conv1_1_weight', 'conv1_1_bias', 'conv1_1_output', 'fc1_weight',
                                 'fc1_bias', 'fc1_output'] + outputs_pre[1:]
+
+    def test_assert_model_has_single_output(self):
+        data = mx.sym.Variable('data')
+        fc1 = mx.sym.FullyConnected(data=data, name='fc1', num_hidden=128)
+        act1 = mx.sym.Activation(data=fc1, name='relu1', act_type="relu")
+        fc2 = mx.sym.FullyConnected(data=act1, name='fc2', num_hidden=64)
+        act2 = mx.sym.Activation(data=fc2, name='relu2', act_type="relu")
+        fc3 = mx.sym.FullyConnected(data=act2, name='fc3', num_hidden=10)
+        fc4 = mx.sym.FullyConnected(data=fc3, name='fc4_1', num_hidden=10)
+        sm1 = mx.sym.SoftmaxOutput(data=fc4, name='softmax1')
+        fc5 = mx.sym.FullyConnected(data=fc3, name='fc4_2', num_hidden=10)
+        sm2 = mx.sym.SoftmaxOutput(data=fc5, name='softmax2')
+        sm3 = mx.sym.SoftmaxOutput(data=fc2, name='softmax3')
+
+        output_1 = sm1
+        output_2 = mx.sym.Group([sm1, sm2])
+        output_3 = mx.sym.Group([sm1, sm2, sm3])
+
+        self.mh._assert_model_has_single_output(self.mh._get_symbol_dict(output_1))
+        with self.assertRaises(exceptions.ModelError):
+            self.mh._assert_model_has_single_output(self.mh._get_symbol_dict(output_2))
+        with self.assertRaises(exceptions.ModelError):
+            self.mh._assert_model_has_single_output(self.mh._get_symbol_dict(output_3))
+
+    def test_get_names_of_inputs_to_layer(self):
+        symbol_dict = self.mh._get_symbol_dict(self.mh.symbol)
+
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 7) == [4]
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 8) == [7]
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 15) == [13]
+
+    def test_get_names_of_inputs_to_layer_split_2(self):
+        data = mx.sym.Variable('data')
+        fc1 = mx.sym.FullyConnected(data=data, name='fc1', num_hidden=128)
+        act1 = mx.sym.Activation(data=fc1, name='relu1', act_type="relu")
+        fc2 = mx.sym.FullyConnected(data=act1, name='fc2', num_hidden=64)
+        act2 = mx.sym.Activation(data=fc2, name='relu2', act_type="relu")
+        fc3 = mx.sym.FullyConnected(data=act2, name='fc3', num_hidden=10)
+        plus = fc2.__add__(fc3)
+
+        symbol_dict = self.mh._get_symbol_dict(plus)
+
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 7) == [4]
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 8) == [7]
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 12) == [7, 11]
+
+    def test_get_names_of_inputs_to_layer_split_3(self):
+        data = mx.sym.Variable('data')
+        fc1 = mx.sym.FullyConnected(data=data, name='fc1', num_hidden=128)
+        act1 = mx.sym.Activation(data=fc1, name='relu1', act_type="relu")
+        fc2 = mx.sym.FullyConnected(data=act1, name='fc2', num_hidden=64)
+        act2 = mx.sym.Activation(data=fc2, name='relu2', act_type="relu")
+        fc3 = mx.sym.FullyConnected(data=act2, name='fc3', num_hidden=10)
+        concat = mx.sym.concat(fc1, fc2, fc3, name='concat1')
+
+        symbol_dict = self.mh._get_symbol_dict(concat)
+
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 4) == [3]
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 11) == [8]
+        assert self.mh._get_names_of_inputs_to_layer(symbol_dict, 12) == [3, 7, 11]
+
+    def test_get_arg_nodes(self):
+        assert self.mh._get_arg_nodes(self.nodes) == [0, 1, 2, 5, 6, 11, 12, 14]
+
+        null_node = {'op': 'null'}
+        op_node = {'op': 'FullyConnected'}
+        nodes = [null_node, op_node, op_node, null_node, null_node, null_node, op_node]
+
+        assert self.mh._get_arg_nodes(nodes) == [0, 3, 4, 5]
+
+    def test_get_heads(self):
+        assert self.mh._get_heads(self.nodes, 'softmaxoutput1') in [[[15, 0, 0]], [[15, 0]]]
+        assert self.mh._get_heads(self.nodes[-11:], 'softmaxoutput1') in [[[10, 0, 0]], [[10, 0]]]
+        assert self.mh._get_heads(self.nodes[-7:], 'softmaxoutput1') in [[[6, 0, 0]], [[6, 0]]]
+
+    def test_get_output_layer_names(self):
+        self.mh._get_output_layer_names(self.symbol_dict) == ['softmaxoutput1']
+
+        data = mx.sym.Variable('data')
+        fc1 = mx.sym.FullyConnected(data=data, name='fc1', num_hidden=128)
+        act1 = mx.sym.Activation(data=fc1, name='relu1', act_type="relu")
+        fc2 = mx.sym.FullyConnected(data=act1, name='fc2', num_hidden=64)
+        act2 = mx.sym.Activation(data=fc2, name='relu2', act_type="relu")
+        fc3 = mx.sym.FullyConnected(data=act2, name='fc3', num_hidden=10)
+        fc4 = mx.sym.FullyConnected(data=fc3, name='fc4_1', num_hidden=10)
+        sm1 = mx.sym.SoftmaxOutput(data=fc4, name='softmax1')
+        fc5 = mx.sym.FullyConnected(data=fc3, name='fc4_2', num_hidden=10)
+        sm2 = mx.sym.SoftmaxOutput(data=fc5, name='softmax2')
+        sm3 = mx.sym.SoftmaxOutput(data=fc2, name='softmax3')
+
+        outputs = [sm1, mx.sym.Group([sm1, sm2]), mx.sym.Group([sm1, sm2, sm3])]
+        output_names = [['softmax1'], ['softmax1', 'softmax2'], ['softmax1', 'softmax2', 'softmax3']]
+
+        for output, output_name in zip(outputs, output_names):
+            symbol_dict = self.mh._get_symbol_dict(output)
+            self.mh._get_output_layer_names(symbol_dict) == output_name
+
+    @staticmethod
+    def _build_symbol_with_nodes_with_zero_input():
+        data = mx.sym.Variable('data')
+        fc1a = mx.sym.FullyConnected(data=data, name='fc1a', num_hidden=128)
+        act1a = mx.sym.Activation(data=fc1a, name='relu1a', act_type="relu")
+        fc1b = mx.sym.FullyConnected(data=data, name='fc1b', num_hidden=64)
+        act1b = mx.sym.Activation(data=fc1b, name='relu1b', act_type="relu")
+        plus = act1a.__add__(act1b)
+        softmax = mx.sym.SoftmaxOutput(data=plus, name='softmax')
+        return softmax
+
+    def test_get_layers_with_node_idx_as_input(self):
+        softmax = self._build_symbol_with_nodes_with_zero_input()
+        symbol_dict = self.mh._get_symbol_dict(softmax)
+
+        expected_ids = [
+            [3, 7],
+            [3],
+            [3],
+            [4],
+            [9],
+            [7],
+            [7],
+            [8],
+            [9],
+            [11]
+        ]
+        for i in range(10):
+            assert self.mh._get_layers_with_node_idx_as_input(i, symbol_dict['nodes']) == expected_ids[i]
 
     @staticmethod
     def create_csv_iterator(batch_size=1):
@@ -309,19 +496,19 @@ class TestModelHandler(TestCase):
             self.mh.get_layer_type('fake_layer_name')
 
     def test_get_layer_names_matching_type(self):
-        layers_found = self.mh.get_layer_names_matching_type(consts.LayerType.CONVOLUTION)
+        layers_found = self.mh.get_layer_names_matching_type('CONVOLUTION')
         assert sorted(layers_found) == sorted(['conv1', 'conv2'])
-        layers_found = self.mh.get_layer_names_matching_type(consts.LayerType.ACTIVATION)
+        layers_found = self.mh.get_layer_names_matching_type('activation')
         assert sorted(layers_found) == sorted(['act1', 'act2'])
-        layers_found = self.mh.get_layer_names_matching_type(consts.LayerType.POOLING)
+        layers_found = self.mh.get_layer_names_matching_type('Pooling')
         assert layers_found == ['pool1']
-        layers_found = self.mh.get_layer_names_matching_type(consts.LayerType.FLATTEN)
+        layers_found = self.mh.get_layer_names_matching_type('flatten')
         assert layers_found == ['flatten1']
-        layers_found = self.mh.get_layer_names_matching_type(consts.LayerType.FULLYCONNECTED)
+        layers_found = self.mh.get_layer_names_matching_type('fullyconnected')
         assert layers_found == ['fullyconnected0']
-        layers_found = self.mh.get_layer_names_matching_type(consts.LayerType.SOFTMAXOUTPUT)
+        layers_found = self.mh.get_layer_names_matching_type('SoftmaxOutput')
         assert layers_found == ['softmaxoutput1']
-        layers_found = self.mh.get_layer_names_matching_type(consts.LayerType.BATCHNORM)
+        layers_found = self.mh.get_layer_names_matching_type('BatchNorm')
         assert layers_found == []
 
     def _test_get_layer_output_image_iterator(self, batch_size):
@@ -480,36 +667,6 @@ class TestModelHandler(TestCase):
         self.mh._validate_layer_name('conv3')
         self.mh._validate_layer_name('weighted')
 
-    def test_model_from_nodes(self):
-        nodes = json.loads(self.mh.symbol.tojson())[consts.NODES]
-        id2name = {0: self.data_name, 1: 'conv1_weight', 2: 'conv1_bias', 3: 'conv1', 4: 'act1', 5: 'conv2_weight',
-                   6: 'conv2_bias', 7: 'conv2', 8: 'act2', 9: 'pool1', 10: 'flatten1', 11: 'fullyconnected0_weight',
-                   12: 'fullyconnected0_bias', 13: 'fullyconnected0', 14: 'softmaxoutput1_label', 15: 'softmaxoutput1'}
-
-        sym = self.mh._model_from_nodes(symbol=None, symbol_nodes=nodes, elements_offset=0, prev_symbols={},
-                                        id2name=id2name)
-
-        self._compare_symbols(sym, self.mh.symbol)
-
-    @staticmethod
-    def _compare_symbols(sym1, sym2):
-        """
-        Compare two symbols.
-
-        :param sym1: Actual symbol
-        :param sym2: Expected symbol
-        """
-        assert sym1.get_internals().list_outputs() == sym2.get_internals().list_outputs(), 'Symbol outputs \
-            mismatch. Expected: {}, Got: {}'.format(sym2.get_internals().list_outputs(),
-                                                    sym1.get_internals().list_outputs())
-
-        for i, _ in enumerate(sym1.get_internals()):
-            assert sym1.get_internals()[i].get_internals().list_outputs() ==\
-                sym1.get_internals()[i].get_internals().list_outputs()
-
-        data_shape = (5, 3, 224, 224)
-        assert sym1.infer_shape(data=data_shape) == sym2.infer_shape(data=data_shape)
-
     def test_prune_parameters(self):
         # Assert that parameters are pruned and logs are written
         parameter_names_pre = ['conv1_weight', 'conv1_bias', 'conv1_moving_mean', 'made_up_param']
@@ -573,7 +730,7 @@ class TestModelHandler(TestCase):
         with open('tests/data/symbol_dict.json') as json_data:
             expected_symbol_dict = json.load(json_data)
 
-        real_symbol_dict = self.mh._get_symbol_dict()
+        real_symbol_dict = self.mh._get_symbol_dict(self.mh.symbol)
 
         # Remove mxnet version number from symbol dictionaries so test doesn't break on new version
         MXNET_VERSION = 'mxnet_version'
@@ -633,3 +790,22 @@ class TestModelHandler(TestCase):
         self._compare_symbols(mh.symbol, symbol)
         assert sorted(mh.arg_params.keys()) == sorted(['conv1_weight', 'conv2_bias', 'conv1_bias', 'conv2_weight'])
         assert mh.aux_params == {}
+
+    @staticmethod
+    def _compare_symbols(sym1, sym2):
+        """
+        Compare two symbols.
+
+        :param sym1: Actual symbol
+        :param sym2: Expected symbol
+        """
+        assert sym1.get_internals().list_outputs() == sym2.get_internals().list_outputs(), 'Symbol outputs \
+            mismatch. Expected: {}, Got: {}'.format(sym2.get_internals().list_outputs(),
+                                                    sym1.get_internals().list_outputs())
+
+        for i, _ in enumerate(sym1.get_internals()):
+            assert sym1.get_internals()[i].get_internals().list_outputs() ==\
+                sym1.get_internals()[i].get_internals().list_outputs()
+
+        data_shape = (5, 3, 224, 224)
+        assert sym1.infer_shape(data=data_shape) == sym2.infer_shape(data=data_shape)

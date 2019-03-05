@@ -37,6 +37,8 @@ The code can be found on our `Github project page <https://github.com/amzn/xfer/
    demos/xfer-modelhandler.ipynb
    demos/xfer-text-transfer.ipynb
    demos/xfer-hpo.ipynb
+   demos/xfer-gluon-with-modelhandler.ipynb
+   demos/xfer-gluon-source-model.ipynb
 
    
 .. toctree::
@@ -51,8 +53,6 @@ The code can be found on our `Github project page <https://github.com/amzn/xfer/
   :caption: For developers
   
   demos/xfer-custom-repurposers.ipynb
-  add_to_layer_factory.rst
-
 
 
 Indices and tables
