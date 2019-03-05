@@ -284,8 +284,11 @@ class TestModelHandler(TestCase):
                              'WARNING:root:Could not find layer parameters: conv2_foo']
 
     def test_get_module_set_params_error(self):
+        # Assert ModelArchitectureError is raised when iterator dimensions do not match module weights
         image_iter = mx.image.ImageIter(2, (3, 123, 123), imglist=self.imglist, path_root='test_images',
                                         label_name='softmaxoutput1_label')
+        with self.assertRaises(model_handler.exceptions.ModelArchitectureError):
+            self.mh.get_module(image_iter)
         self.assertRaisesRegex(model_handler.exceptions.ModelArchitectureError, 'Weight shape mismatch: Expected shape='
                                '\(4,46225\), Actual shape=\(4,12996\). This can be caused by incorrect layer shapes or '
                                'incorrect input data shapes.',
