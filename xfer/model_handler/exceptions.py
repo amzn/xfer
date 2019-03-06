@@ -28,8 +28,11 @@ class ModelArchitectureError(Exception):
 
 def _handle_mxnet_error(error):
     error_string = error.__str__()
+    # Error string changed in Mxnet 1.4.0
+    error_ref_pre_mxnet_140 = 'Check failed: assign(&dattr, (*vec)[i]) Incompatible attr in node'
+    error_ref_post_mxnet_140 = 'Check failed: assign(&dattr, vec.at(i)) Incompatible attr in node'
     try:
-        if 'Check failed: assign(&dattr, (*vec)[i]) Incompatible attr in node' in error_string:
+        if error_ref_pre_mxnet_140 in error_string or error_ref_post_mxnet_140 in error_string:
             start_str1 = 'expected ['
             start_index1 = error_string.index(start_str1) + len(start_str1)
             end_str1 = '], got'
