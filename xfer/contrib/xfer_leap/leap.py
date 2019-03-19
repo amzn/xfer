@@ -23,39 +23,6 @@ class Leap(object):
     Meta gradient path learner.
 
     MXNet implementation of the Leap algorithm: https://arxiv.org/abs/1812.01054.
-
-    Example:
-        >>> Require: criterion, model, tasks, opt_cls, meta_opt_cls, opt_kwargs, meta_opt_kwargs
-        >>>
-        >>> leap = Leap(model)
-        >>> mopt = meta_opt_cls(leap.parameters(), **meta_opt_kwargs)
-        >>> for meta_steps:
-        >>>     meta_batch = tasks.sample()
-        >>>     for task in meta_batch:
-        >>>         leap.init_task()
-        >>>         leap.to(model)  # init model params
-        >>>
-        >>>         opt = opt_cls(model.parameters(), **opt_kwargs)
-        >>>
-        >>>         for x, y in task:
-        >>>             with mx.autograd.record():
-        >>>                 loss = criterion(model(x), y)
-        >>>             loss.backward()
-        >>>
-        >>>             leap.update(loss, model)  # increment task meta grad
-        >>>
-        >>>             opt.step()
-        >>>             opt.zero_grad()  # MUST come after leap.update
-        >>>             ###
-        >>>         leap.accumulate()  # accumulate across tasks
-        >>>         leap.zero()
-        >>>         ###
-        >>>     leap.load()  # load accumulated meta grad
-        >>>     meta_optimizer.step()
-        >>>     meta_optimizer.zero_grad()
-        >>>     leap.clear_acc ()
-        >>>     ###
-        >>>  ###
     """
 
     def __init__(self, model, norm=True, regularizer=True, loss=True):

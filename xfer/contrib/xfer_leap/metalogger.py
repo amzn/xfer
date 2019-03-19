@@ -22,7 +22,7 @@ ALL = 'all'
 
 class MetaLogger():
     """
-    Class for holding the parameters and losses for a Multipurposer and plotting those values.
+    Class for holding the parameters and losses for a MetaRepurposer and plotting those values.
     """
     # TODO: Add support for logging loss/parameters after each batch rather than after every epoch
     def __init__(self, alpha_plot=0.1):

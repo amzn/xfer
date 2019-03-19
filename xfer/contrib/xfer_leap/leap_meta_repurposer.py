@@ -26,7 +26,11 @@ DEFAULT_TASK_OPTIMIZER_PARAMS = {'learning_rate': 0.005}
 
 class LeapMetaRepurposer(MetaRepurposer):
     """
-    Repurposer to do meta-learning using Leap algorithm
+    Repurposer to do meta-learning using Leap algorithm.
+
+    Starting from the parameters of input_model as the initial point, the Leap algorithm is applied. It learns a final
+    parametrization of input_model that can be quickly adapted to solve a test task sampled from the same underlying
+    distribution that generated train_tasks.
 
     :param input_model: Source neural network to use for meta-learning.
     :type input_model: :class:`mxnet.gluon.Block`

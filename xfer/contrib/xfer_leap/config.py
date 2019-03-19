@@ -43,6 +43,6 @@ DEFAULT_CONFIG_OMNIGLOT = {
     # ----------------------------------------------------
     # Transform the PIL image (before loading it in an mx.ndarray)
     "transform_image": None,
-    # Transform the mx.ndarray before
+    # Transform the mx.ndarray
     "transform_mxnet": None
     }
