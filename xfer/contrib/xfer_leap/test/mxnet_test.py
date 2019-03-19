@@ -15,7 +15,8 @@ from __future__ import print_function
 import mxnet as mx
 from mxnet import nd, autograd, gluon
 
-from leap import Leap, MetaLogger
+from ..leap import Leap
+from ..metalogger import MetaLogger
 
 data_ctx = mx.cpu()
 model_ctx = mx.cpu()
