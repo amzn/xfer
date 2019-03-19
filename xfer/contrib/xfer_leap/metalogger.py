@@ -148,12 +148,15 @@ class MetaLogger():
             raise ValueError('No parameters logged.')
         fig, axes = plt.subplots(ncols=self.num_tasks, figsize=figsize)
         for surface in range(self.num_tasks):
-            for ms in self._parameters.keys():
+            for ms in sorted(self._parameters.keys()):
                 for task in range(self.num_tasks):
-                    if task in self._parameters[ms].keys():
-                        x = np.concatenate([p[param] for p in self._parameters[ms][task]])
-                        x = np.concatenate([self._parameters[ms]['all'][0][param], x]).T
-                        initial_point = self._parameters[ms]['all'][0][param].T
+                    if task in self._parameters[ms].keys() or ms == max(self._parameters.keys()):
+                        temp_ms = ms
+                        while task not in self._parameters[temp_ms].keys():
+                            temp_ms -= 1
+                        x = np.concatenate([p[param] for p in self._parameters[temp_ms][task]])
+                        x = np.concatenate([self._parameters[temp_ms]['all'][0][param], x]).T
+                        initial_point = self._parameters[temp_ms]['all'][0][param].T
 
                         assert x.shape[0] == 2, 'Dimension of parameter must be 2.'
 
