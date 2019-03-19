@@ -67,7 +67,7 @@ def resize_imgs(root):
     all_images = glob.glob(image_path + '*')
     for image_file in all_images:
         im = Image.open(image_file)
-        im = im.resize((28,28), resample=Image.LANCZOS)
+        im = im.resize((28, 28), resample=Image.LANCZOS)
         im.save(image_file)
 
 
@@ -80,12 +80,12 @@ def _get_inverse_affine_matrix(center, angle, translate, scale, shear):
     ])
 
     inv_matrix_scale_rotate_shear = (1 / (scale * np.cos(shear))) * np.array([
-        [np.cos(angle +shear), np.sin(angle +shear), 0],
+        [np.cos(angle + shear), np.sin(angle + shear), 0],
         [-np.sin(angle), np.cos(shear), 0],
         [0, 0, scale * np.cos(shear)]
     ])
 
-    inv_matrix_center_dot_inv_matrix_trans =np.array([
+    inv_matrix_center_dot_inv_matrix_trans = np.array([
         [1, 0, -(center[0] + translate[0])],
         [0, 1, -(center[1] + translate[1])],
         [0, 0, 1]
@@ -114,6 +114,3 @@ def random_affine_matrix(img, scale=(0.8, 1.2), rotation=(0, 2*np.pi), translati
     scale = random.uniform(scale[0], scale[1])
     matrix = affine_transform(img, angle=angle, translate=translation, scale=scale, shear=0.0)
     return matrix
-
-
-

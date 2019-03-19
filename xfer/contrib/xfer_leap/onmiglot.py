@@ -98,7 +98,10 @@ class MetaTaskOmniglot(MetaTaskDataContainer):
         # Filter out alphabet with less than num_classes, and shuffle
         self.alphabets = list(list_dirs(self.target_path))
         if self.num_classes:
-            self.alphabets = [a for a in self.alphabets if len(list(list_dirs(os.path.join(self.target_path, a)))) >= self.num_classes]
+            self.alphabets = []
+            for a in self.alphabets:
+                if len(list(list_dirs(os.path.join(self.target_path, a)))) >= self.num_classes:
+                    self.alphabets.append(a)
             assert trs + tes < len(self.alphabets), 'cannot create test set'
         random.shuffle(self.alphabets)
 
@@ -311,11 +314,11 @@ if __name__ == '__main__':
             assert (data[0].shape == (batch_size, 28, 28))
             assert (data[1].shape == (batch_size, ))
             assert (data[1].asnumpy().dtype == np.int)
-            break;
+            break
 
         val_iterator = task.get_val_iterator(batch_size)
         for data in val_iterator:
             assert (data[0].shape == (batch_size, 28, 28))
             assert (data[1].shape == (batch_size, ))
             assert (data[1].asnumpy().dtype == np.int)
-            break;
+            break
