@@ -1,3 +1,16 @@
+# Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+#   Licensed under the Apache License, Version 2.0 (the "License").
+#   You may not use this file except in compliance with the License.
+#   A copy of the License is located at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   or in the "license" file accompanying this file. This file is distributed
+#   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+#   express or implied. See the License for the specific language governing
+#   permissions and limitations under the License.
+# ==============================================================================
 import os
 import random
 import numpy as np
@@ -68,11 +81,11 @@ class MetaTaskOmniglot(MetaTaskDataContainer):
         # Generate the training/test/val dataset.
         # Each dataset is a list of SubOmniglot objects (one per task)
         data_train = [TaskOmniglot(self.target_path, [a], num_classes, hold, transform_image=transform_image,
-                                  transform_mxnet=transform_mxnet, context=context) for a in self.alphabets_train]
+                                   transform_mxnet=transform_mxnet, context=context) for a in self.alphabets_train]
         data_test = [TaskOmniglot(self.target_path, [a], num_classes, hold, transform_image=transform_image,
-                                 transform_mxnet=transform_mxnet, context=context) for a in self.alphabets_test]
+                                  transform_mxnet=transform_mxnet, context=context) for a in self.alphabets_test]
         data_val = [TaskOmniglot(self.target_path, [a], num_classes, hold, transform_image=transform_image,
-                                transform_mxnet=transform_mxnet, context=context) for a in self.alphabets_val]
+                                 transform_mxnet=transform_mxnet, context=context) for a in self.alphabets_val]
 
         super(MetaTaskOmniglot, self).__init__(data_train, data_test, data_val, context)
 
