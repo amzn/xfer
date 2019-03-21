@@ -70,7 +70,7 @@ And confirm that version returned matches the expected package version number.
 ## Contributing
 Have a look at our [contributing guide](CONTRIBUTING.md), thanks for the interest!  
 
-Points of contact for Xfer are: Jordan Massiah, Keerthana Elango, Pablo G. Moreno, Nikos Aletras, Andreas Damianou  
+Points of contact for Xfer are: Jordan Massiah, Keerthana Elango, Pablo G. Moreno, Nikos Aletras, Andreas Damianou, Sebastian Flennerhag  
 
 ## License
 

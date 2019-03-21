@@ -3,3 +3,6 @@ flake8==3.5.0
 pytest==3.2.1
 pytest-cov==2.5.1
 nbformat==4.4.0
+jupyter_client
+jupyter
+tornado<6  # Tornado 6.x breaks nbconvert which is a dependency of jupyter
