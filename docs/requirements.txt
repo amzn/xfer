@@ -2,4 +2,3 @@ Sphinx==1.7.7
 nbsphinx==0.3.4
 sphinx-rtd-theme==0.4.1
 numpy==1.14.5
-GPy==1.9.5
