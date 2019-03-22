@@ -24,7 +24,7 @@ requires = [
     'numpy>=1.10.1',  # GPy import throws error for lower versions
     'scikit-learn>=0.19.2',
     'matplotlib>=2.2.2',
-    'GPy==1.9.6'
+    'GPy>=1.9.5'
 ]
 
 
