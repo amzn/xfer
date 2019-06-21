@@ -15,7 +15,6 @@ import mxnet as mx
 
 from .neural_network_repurposer import NeuralNetworkRepurposer
 from .model_handler.model_handler import ModelHandler
-from .model_handler import layer_factory
 from .constants import neural_network_repurposer_keys as keys
 
 
@@ -104,10 +103,10 @@ class NeuralNetworkRandomFreezeRepurposer(NeuralNetworkRepurposer):
         model_handler.drop_layer_top(self.num_layers_to_drop)
 
         # Add fully connected layer and softmax output
-        fc = layer_factory.FullyConnected(name='new_fully_connected_layer', num_hidden=self.target_class_count)
+        fc = mx.sym.FullyConnected(name='new_fully_connected_layer', num_hidden=self.target_class_count)
         # Softmax layer name should be set to the name provided by the iterator
         softmax_name = train_iterator.provide_label[0][0].replace('_label', '')
-        softmax = layer_factory.SoftmaxOutput(name=softmax_name)
+        softmax = mx.sym.SoftmaxOutput(name=softmax_name)
         model_handler.add_layer_top([fc, softmax])
 
         # Create and return target MXNet module using the fixed/random parameters

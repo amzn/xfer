@@ -4,7 +4,7 @@ python:
   - '3.4'
   - '3.5'
 sudo: required
-dist: trusty
+dist: xenial
 before_install: |
   if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     # Get latest version of brew
@@ -22,13 +22,13 @@ before_install: |
     # Confirm versions
     python --version
     pip -V
+    pip install --upgrade pip
     if [ $PYTHON == 3.4.4 ]; then
       # GPy requires numpy during setup for Python versions less than 3.5
       pip install numpy
     fi
   fi
 install:
-  - pip install --upgrade pip
   - pip install -r requirements.txt
   - pip install -r test_requirements.txt
   # work around issues with GPy setting matplotlib backend
@@ -58,14 +58,23 @@ jobs:
       python: '3.6'
       if: branch != master
     - stage: notebooks
-      os: osx
-      language: generic
       python: '3.6'
-      env: PYTHON=3.6.6
       script:
-        - brew install graphviz
+        - sudo apt-get install graphviz
         - pip install -r docs/demos/requirements.txt
-        - travis_wait 40 pytest --durations=0 --notebook
+        - travis_wait 40 pytest --durations=0 --notebook tests/notebook/test_notebooks.py
+    - script:
+        - sudo apt-get install graphviz
+        - pip install -r docs/demos/requirements.txt
+        - travis_wait 40 pytest --durations=0 --notebook_hpo tests/notebook/test_notebooks.py
+      python: '3.6'
+      name: "HPO notebook"
+    - script:
+        - sudo apt-get install graphviz
+        - pip install -r docs/demos/requirements.txt
+        - travis_wait 40 pytest --durations=0 --notebook_gluon tests/notebook/test_notebooks.py
+      python: '3.6'
+      name: "Gluon notebooks"
     - stage: release
       if: branch = master
       python: '3.6' # Official supported Python dist.

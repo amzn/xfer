@@ -15,7 +15,7 @@ Xfer is a library that allows quick and easy transfer of knowledge<sup>[1](http:
 
 Xfer can be used as a pipeline that spans from extracting features to training a repurposer. The repurposer is then an object that carries out predictions in the target task.
 
-You can also use individual components of Xfer as part of your own pipeline. For example, you can leverage the feature extractor to extract features from deep neural networks or ModelHanlder, which allows for quick building of neural networks, even if you are not an MXNet expert.
+You can also use individual components of Xfer as part of your own pipeline. For example, you can leverage the feature extractor to extract features from deep neural networks or ModelHandler, which allows for quick building of neural networks, even if you are not an MXNet expert.
 
 #### Why should I use Xfer?
 * _Resource efficiency_: you don't have to train big neural networks from scratch.
@@ -44,7 +44,7 @@ predictions = repurposer.predict_label(test_iterator)
 
 ## Installation
 * __Dependencies:__
-Primary dependencies are MXNet >=1.2 and GPy >= 1.9.5. See [requirements](requirements.txt).
+Primary dependencies are MXNet >=1.2 and GPy >= 1.9.5. See all requirements in [setup.py](setup.py).
 * __Supported architectures / versions:__
 Python 3.6+ on MacOS and Amazon Linux. 
 
@@ -68,8 +68,9 @@ To confirm installation, run:
 And confirm that version returned matches the expected package version number.
 
 ## Contributing
-Have a look at our [contributing guide](CONTRIBUTING.md), thanks for the interest!
+Have a look at our [contributing guide](CONTRIBUTING.md), thanks for the interest!  
 
+Points of contact for Xfer are: Jordan Massiah, Keerthana Elango, Pablo G. Moreno, Nikos Aletras, Andreas Damianou, Sebastian Flennerhag  
 
 ## License
 

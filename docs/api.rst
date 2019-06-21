@@ -50,6 +50,5 @@ Model Handler
 
     .. Add/replace module names you want documented here
     xfer.model_handler.ModelHandler
-    xfer.model_handler.layer_factory
     xfer.model_handler.exceptions
     xfer.model_handler.consts
