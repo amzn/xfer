@@ -15,13 +15,13 @@ from unittest import TestCase
 
 import json
 import os
+from collections import OrderedDict
+import graphviz
 import mxnet as mx
 import numpy as np
-from collections import OrderedDict
 
 from xfer import model_handler
 from xfer.model_handler import consts, exceptions
-
 from ..repurposer_test_utils import RepurposerTestUtils
 
 
@@ -162,7 +162,7 @@ class TestModelHandler(TestCase):
 
         assert set(outputs_pre).symmetric_difference(set(outputs_post)) == {'conv1_bias', 'conv1_weight',
                                                                             'conv1_output', 'act1_output',
-                                                                            'conv2_bias',  'conv2_output',
+                                                                            'conv2_bias', 'conv2_output',
                                                                             'conv2_weight'}
 
     def test_drop_layer_bottom_too_many(self):
@@ -366,7 +366,7 @@ class TestModelHandler(TestCase):
         assert self.mh._get_heads(self.nodes[-7:], 'softmaxoutput1') in [[[6, 0, 0]], [[6, 0]]]
 
     def test_get_output_layer_names(self):
-        self.mh._get_output_layer_names(self.symbol_dict) == ['softmaxoutput1']
+        assert self.mh._get_output_layer_names(self.symbol_dict) == ['softmaxoutput1']
 
         data = mx.sym.Variable('data')
         fc1 = mx.sym.FullyConnected(data=data, name='fc1', num_hidden=128)
@@ -477,8 +477,8 @@ class TestModelHandler(TestCase):
         with self.assertRaises(model_handler.exceptions.ModelArchitectureError):
             self.mh.get_module(image_iter)
         self.assertRaisesRegex(model_handler.exceptions.ModelArchitectureError, 'Weight shape mismatch: Expected shape='
-                               '\(4,46225\), Actual shape=\(4,12996\). This can be caused by incorrect layer shapes or '
-                               'incorrect input data shapes.',
+                                                                                '\(4,46225\), Actual shape=\(4,12996\). This can be caused by incorrect layer shapes or '
+                                                                                'incorrect input data shapes.',
                                self.mh.get_module, image_iter)
 
     def test_get_layer_type(self):
@@ -580,7 +580,7 @@ class TestModelHandler(TestCase):
 
             expected_features = expected_feature_label_dict[key][0]
             actual_features = actual_feature_label_dict[key][0]
-            self.assertTrue(np.allclose(expected_features, actual_features,  rtol=tolerance),
+            self.assertTrue(np.allclose(expected_features, actual_features, rtol=tolerance),
                             "Expected features:{}. Actual:{}".format(expected_features, actual_features))
 
             expected_label = expected_feature_label_dict[key][1]
@@ -636,9 +636,7 @@ class TestModelHandler(TestCase):
             self.mh.get_layer_parameters('fullyconnected0')
 
     def test_visualize_net(self):
-        with open('tests/data/visualize.json', 'r') as json_data:
-            expected_symbol_dict = json.load(json_data)
-        assert expected_symbol_dict == self.mh.visualize_net().__dict__
+        assert isinstance(self.mh.visualize_net(), graphviz.dot.Digraph)
 
     def test_save_symbol(self):
         assert not os.path.isfile('temp-test-symbol.json')
@@ -693,7 +691,7 @@ class TestModelHandler(TestCase):
 
         assert arg_params == {'conv2_weight': 1, 'conv2_bias': 1}
         assert aux_params == {'conv2_moving_var': 1}
-        cm.output == 'WARNING:root:Could not find layers parameters: conv3_weight, conv3_moving_var'
+        assert cm.output == ['WARNING:root:Could not find layer parameters: conv3_weight, conv3_moving_var']
 
     def test_get_devices_cpu(self):
         devices = self.mh._get_devices(mx.context.cpu, 3)
@@ -804,8 +802,8 @@ class TestModelHandler(TestCase):
                                                     sym1.get_internals().list_outputs())
 
         for i, _ in enumerate(sym1.get_internals()):
-            assert sym1.get_internals()[i].get_internals().list_outputs() ==\
-                sym1.get_internals()[i].get_internals().list_outputs()
+            assert sym1.get_internals()[i].get_internals().list_outputs() == \
+                   sym1.get_internals()[i].get_internals().list_outputs()
 
         data_shape = (5, 3, 224, 224)
         assert sym1.infer_shape(data=data_shape) == sym2.infer_shape(data=data_shape)

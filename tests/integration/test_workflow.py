@@ -155,7 +155,7 @@ class BnnWorkflowTestCase(WorkflowTestCase):
 class NnftWorkflowTestCase(WorkflowTestCase):
     def setUp(self):
         super().setUp()
-        self.min_accuracy = 0.61
+        self.min_accuracy = 0.40
         self.prev_accuracy = None
 
     def get_repurposer(self, source_model):
