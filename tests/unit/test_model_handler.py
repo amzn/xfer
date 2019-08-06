@@ -477,8 +477,8 @@ class TestModelHandler(TestCase):
         with self.assertRaises(model_handler.exceptions.ModelArchitectureError):
             self.mh.get_module(image_iter)
         self.assertRaisesRegex(model_handler.exceptions.ModelArchitectureError, 'Weight shape mismatch: Expected shape='
-                                                                                '\(4,46225\), Actual shape=\(4,12996\). This can be caused by incorrect layer shapes or '
-                                                                                'incorrect input data shapes.',
+                               '\(4,46225\), Actual shape=\(4,12996\). This can be caused by incorrect layer shapes or '
+                               'incorrect input data shapes.',
                                self.mh.get_module, image_iter)
 
     def test_get_layer_type(self):
