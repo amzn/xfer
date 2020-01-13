@@ -30,9 +30,17 @@ class TestExceptions(TestCase):
         with self.assertRaises(exceptions.ModelArchitectureError):
             exceptions._handle_mxnet_error(error)
 
-    def test_handle_mxnet_error_post_140(self):
+    def test_handle_mxnet_error_140(self):
         # Assert ModelArchitectureError is raised
-        with open('tests/data/exceptions/model_architecture_error_post_140.txt', 'r') as tf:
+        with open('tests/data/exceptions/model_architecture_error_140.txt', 'r') as tf:
+            string = tf.read()
+        error = CustomError(string)
+        with self.assertRaises(exceptions.ModelArchitectureError):
+            exceptions._handle_mxnet_error(error)
+
+    def test_handle_mxnet_error_150(self):
+        # Assert ModelArchitectureError is raised
+        with open('tests/data/exceptions/model_architecture_error_150.txt', 'r') as tf:
             string = tf.read()
         error = CustomError(string)
         with self.assertRaises(exceptions.ModelArchitectureError):

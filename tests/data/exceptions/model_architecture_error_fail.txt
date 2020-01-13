@@ -1,3 +1,3 @@
-src/operator/nn/../tensor/../elemwise_op_common.h:123: Check failed: assign(&dattr, (*vec)[i]) Incompatible attr in node  at 0-th output: expected [4,46225], got [4,45369]
+src/operator/nn/../tensor/../elemwise_op_common.h:123: Check failed: assign(&dattr, (*vec)[i]) Incompa???tible attr in node  at 0-th output: expected [4,46225], got [4,45369]
 
                     Stack trace??? returned 10 entries:

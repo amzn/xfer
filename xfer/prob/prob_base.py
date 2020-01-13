@@ -195,7 +195,7 @@ class Probability(object):
 
     @staticmethod
     def _load_params(filename):
-        load_data = np.load(filename)
+        load_data = np.load(filename, allow_pickle=True)
         params = {}
         raw_params = {}
         for key in load_data.files:
