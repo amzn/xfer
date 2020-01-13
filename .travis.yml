@@ -12,6 +12,11 @@ before_install: |
     # Recommended for pyenv
     brew outdated openssl || brew upgrade openssl
     brew outdated readline || brew upgrade readline
+    if [ $PYTHON == 3.5.1 ]; then
+      CFLAGS="-I$(brew --prefix openssl)/include"
+      LDFLAGS="-L$(brew --prefix openssl)/lib"
+      
+    
     # Update pyenv
     brew outdated pyenv || brew upgrade pyenv
     # Install specified Python version
