@@ -15,8 +15,7 @@ before_install: |
     if [ $PYTHON == 3.5.1 ]; then
       CFLAGS="-I$(brew --prefix openssl)/include"
       LDFLAGS="-L$(brew --prefix openssl)/lib"
-      
-    
+    fi      
     # Update pyenv
     brew outdated pyenv || brew upgrade pyenv
     # Install specified Python version
