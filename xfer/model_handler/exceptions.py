@@ -14,6 +14,7 @@
 """
 Exceptions for Model Handler.
 """
+import re
 
 
 class ModelError(Exception):
@@ -28,11 +29,10 @@ class ModelArchitectureError(Exception):
 
 def _handle_mxnet_error(error):
     error_string = error.__str__()
-    # Error string changed in Mxnet 1.4.0
-    error_ref_pre_mxnet_140 = 'Check failed: assign(&dattr, (*vec)[i]) Incompatible attr in node'
-    error_ref_post_mxnet_140 = 'Check failed: assign(&dattr, vec.at(i)) Incompatible attr in node'
+    error_regex = re.compile('Check failed: assign\(&dattr,.*vec.*i.*\).*Incompatible attr in node')
+
     try:
-        if error_ref_pre_mxnet_140 in error_string or error_ref_post_mxnet_140 in error_string:
+        if re.search(error_regex, error_string) is not None:
             start_str1 = 'expected ['
             start_index1 = error_string.index(start_str1) + len(start_str1)
             end_str1 = '], got'
@@ -40,8 +40,7 @@ def _handle_mxnet_error(error):
 
             start_str2 = '], got ['
             start_index2 = error_string.index(start_str2) + len(start_str2)
-            end_str2 = ']\n\nStack trace returned '
-            end_index2 = error_string.index(end_str2)
+            end_index2 = re.search(re.compile(']\n.*Stack trace', re.DOTALL), error_string).start()
 
             correct_shape = error_string[start_index1:end_index1]
             actual_shape = error_string[start_index2:end_index2]
