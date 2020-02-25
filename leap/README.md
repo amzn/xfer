@@ -17,7 +17,7 @@ Python 3.6+ on MacOS and Amazon Linux.
 
 
 -  __Install from source:__
-To install leap from source, after cloning the repository run the following from the top-level directory:
+To install leap from source, after cloning the repository run the following from the xfer/leap directory:
 ```
 pip install .
 ```
