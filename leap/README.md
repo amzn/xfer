@@ -22,7 +22,7 @@ To install leap from source, after cloning the repository run the following from
 pip install .
 ```
 
-Alternative you can install with:
+Alternatively you can install with:
 ```
 python setup.py install 
 ```
