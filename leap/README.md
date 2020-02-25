@@ -11,7 +11,7 @@ Check the `demos` and `test` folders.
 
 ## Installation
 * __Dependencies:__
-Primary dependencies are MXNet >=1.2. See all requirements in [setup.py](setup.py).
+Primary dependency is MXNet >=1.2. See all requirements in [setup.py](setup.py).
 * __Supported architectures / versions:__
 Python 3.6+ on MacOS and Amazon Linux. 
 
