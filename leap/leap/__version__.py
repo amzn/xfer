@@ -1,4 +1,4 @@
-# Copyright 2018 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 #
 #   Licensed under the Apache License, Version 2.0 (the "License").
 #   You may not use this file except in compliance with the License.
@@ -11,9 +11,4 @@
 #   express or implied. See the License for the specific language governing
 #   permissions and limitations under the License.
 # ==============================================================================
-from .leap import Leap  # noqa: F401
-from .metalogger import MetaLogger  # noqa: F401
-from . import meta_repurposer  # noqa: F401
-from . import leap_meta_repurposer  # noqa: F401
-from .meta_repurposer import MetaRepurposer  # noqa: F401
-from .leap_meta_repurposer import LeapMetaRepurposer  # noqa: F401
+__version__ = '0.1'
