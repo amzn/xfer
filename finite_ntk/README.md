@@ -1,6 +1,6 @@
-# On Transfer Learning via Linearized Neural Networks
+# Transfer Learning via Linearized Neural Networks
 
-This repository contains a GPyTorch implementation of finite width neural tangent kernels from the paper
+This repository contains a GPyTorch implementation of finite width neural tangent kernels from the paper [(link)](http://metalearning.ml/2019/papers/metalearn2019-maddox.pdf) 
 
 *On Transfer Learning with Linearised Neural Networks*
 
@@ -78,4 +78,7 @@ Adam Paszke's gist for the [Rop](https://gist.github.com/apaszke/c7257ac04cb8deb
 We'd like to thank Max Balandat for providing us a cleaned version of the malaria data files from [Balandat et al, 2019](https://arxiv.org/abs/1910.06403) and Jacob Gardner and Marc Finzi for 
 help with the Fisher vector products.
 
-The Malaria Global Atlas data file can be downloaded at: https://wjmaddox.github.io/assets/data/malaria_df.hdf5
+The Malaria Global Atlas data file can be downloaded at: https://wjmaddox.github.io/assets/data/malaria_df.hdf5   
+
+## Authors  
+Wesley Maddox
