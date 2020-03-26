@@ -38,8 +38,8 @@ install:
 script:
   - flake8
   - pytest #--durations=0 --cov=./ --integration
-after_success:
-  - codecov
+#after_success:
+#  - codecov
 jobs:
   include:
     - os: osx
@@ -76,9 +76,9 @@ jobs:
 #        - travis_wait 40 pytest --durations=0 --notebook_gluon tests/notebook/test_notebooks.py
 #      python: '3.6'
 #      name: "Gluon notebooks"
-    - stage: release
-      if: branch = master
-      python: '3.6' # Official supported Python dist.
+#    - stage: release
+#      if: branch = master
+#      python: '3.6' # Official supported Python dist.
 #      deploy:
 #        provider: pypi
 #        user: jmas
