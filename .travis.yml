@@ -39,6 +39,7 @@ script:
   - flake8
   - ls
   - pytest tests/unit/test_lr_repurposer.py
+  - - pytest tests/unit/test_gp_repurposer.py
 #  - pytest #--durations=0 --cov=./ --integration
 #after_success:
 #  - codecov
