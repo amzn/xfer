@@ -19,7 +19,7 @@ from collections import OrderedDict
 import graphviz
 import mxnet as mx
 import numpy as np
-from pytest import skip
+import pytest
 
 from xfer import model_handler
 from xfer.model_handler import consts, exceptions
@@ -471,7 +471,7 @@ class TestModelHandler(TestCase):
         assert cm.output == ['WARNING:root:Could not find layer parameters: conv1_foo',
                              'WARNING:root:Could not find layer parameters: conv2_foo']
 
-    @skip
+    @pytest.mark.skip
     # Skipping this test because it causes TravisCI to crash
     def test_get_module_set_params_error(self):
         # Assert ModelArchitectureError is raised when iterator dimensions do not match module weights
