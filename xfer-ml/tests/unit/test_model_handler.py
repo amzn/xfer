@@ -47,17 +47,17 @@ class TestModelHandler(TestCase):
     def tearDown(self):
         del self.mh
 
-    # def test_resnet(self):
-    #     """Assert that ModelHandler can drop layers from resnet without errors"""
-    #     RepurposerTestUtils.download_resnet()
-    #     mod = mx.mod.Module.load('resnet-101', 0)
-    #     mh = model_handler.ModelHandler(mod)
-    #     old_layer_names = mh.layer_names
-    #
-    #     mh.drop_layer_top()
-    #     mh.drop_layer_bottom()
-    #
-    #     assert sorted(list(set(old_layer_names).difference(set(mh.layer_names)))) == sorted(['bn_data', 'softmax'])
+    def test_resnet(self):
+        """Assert that ModelHandler can drop layers from resnet without errors"""
+        RepurposerTestUtils.download_resnet()
+        mod = mx.mod.Module.load('resnet-101', 0)
+        mh = model_handler.ModelHandler(mod)
+        old_layer_names = mh.layer_names
+
+        mh.drop_layer_top()
+        mh.drop_layer_bottom()
+
+        assert sorted(list(set(old_layer_names).difference(set(mh.layer_names)))) == sorted(['bn_data', 'softmax'])
 
     def test_constructor_binded_module(self):
         # Assert module that is binded can be used to init a ModelHandler object and can add/drop layers
