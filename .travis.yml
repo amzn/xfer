@@ -38,11 +38,9 @@ install:
 script:
   - flake8
   - ls
-  - pytest tests/unit/test_svm_repurposer.py -v
-  - pytest --integration -v
-  - pytest #--durations=0 --cov=./ --integration
-#after_success:
-#  - codecov
+  - pytest --durations=0 --cov=./ --integration
+after_success:
+  - codecov
 jobs:
   include:
     - os: osx
@@ -52,32 +50,31 @@ jobs:
     - os: linux
       python: '3.6'
       if: branch != master
-#    - stage: notebooks
-#      python: '3.6'
-#      script:
-#        - sudo apt-get install graphviz
-#        - pip install -r docs/demos/requirements.txt
-#        - travis_wait 40 pytest --durations=0 --notebook tests/notebook/test_notebooks.py
-#    - script:
-#        - sudo apt-get install graphviz
-#        - pip install -r docs/demos/requirements.txt
-#        - travis_wait 40 pytest --durations=0 --notebook_hpo tests/notebook/test_notebooks.py
-#      python: '3.6'
-#      name: "HPO notebook"
-#    - script:
-#        - sudo apt-get install graphviz
-#        - pip install -r docs/demos/requirements.txt
-#        - travis_wait 40 pytest --durations=0 --notebook_gluon tests/notebook/test_notebooks.py
-#      python: '3.6'
-#      name: "Gluon notebooks"
-#    - stage: release
-#      if: branch = master
-#      python: '3.6' # Official supported Python dist.
-#      deploy:
-#        provider: pypi
-#        user: jmas
-#        password:
-#          secure:  dTE1XktLfnIWaQ1jnwNX0jtFf9qlkS2KekXQwqRB5x6zO3ou8FkOJIrp01WbDycDVyWAaIHGgZNj+sNlqhVnVKIgRj/fzIJ18Ur4GCmyhoJ9iB4GOPh9clBVBIkC6jSNAaQJlEzzHhx81RncKjhN2HaTpt7Xev89NrdBl0j1enyKPtYM7LrZGymlbdMBHpDTxbNe2CHkw+R+sgnBxtg1UttjMP36zuAQzNhqd5hT3fIuLyI3XWsNEL6/QL/oGN7IvBtm2a7cYsZvCiMDL3pgpKkirUOZGNgWjEGv+OipRavgal+As7J2WAGj0F2X4tVTBAzaf/hG8aQV3OXacMBrQJVUldpqsqpfnQB1gUxEOpk3/rcHMZUxG6uQbBFCrgfdFVUs6N/IDe6humkqiFpouXc+h5hhPcwvguOWJcdgHmlluEO/SnWaP41hDIwDw4zNv/EavG0ZI1645QXuSrLDOv1mgX4XEBvxprILzPhYhz3Za+Lw4v4UVIari3kE/ZQf5OYqhECj3Fou5/Rl65IOm0vOpp7JfVmJHni+EPVJbBRv4nQQ+GHl8CEFT1v+SejgUXfB3hMxOXYeEHPGbzCbgFqOnmLBPrxk/pPIwd4SLzGQf9GALkbJNASQQPjej3IBxhVHEhr+w9t8ffz0FtiLd28OoEa7IZayjmuLk2Q9WvM=
-#        on:
-#          branch: master
-
+    - stage: notebooks
+      python: '3.6'
+      script:
+        - sudo apt-get install graphviz
+        - pip install -r docs/demos/requirements.txt
+        - travis_wait 40 pytest --durations=0 --notebook tests/notebook/test_notebooks.py
+    - script:
+        - sudo apt-get install graphviz
+        - pip install -r docs/demos/requirements.txt
+        - travis_wait 40 pytest --durations=0 --notebook_hpo tests/notebook/test_notebooks.py
+      python: '3.6'
+      name: "HPO notebook"
+    - script:
+        - sudo apt-get install graphviz
+        - pip install -r docs/demos/requirements.txt
+        - travis_wait 40 pytest --durations=0 --notebook_gluon tests/notebook/test_notebooks.py
+      python: '3.6'
+      name: "Gluon notebooks"
+    - stage: release
+      if: branch = master
+      python: '3.6' # Official supported Python dist.
+      deploy:
+        provider: pypi
+        user: jmas
+        password:
+          secure:  dTE1XktLfnIWaQ1jnwNX0jtFf9qlkS2KekXQwqRB5x6zO3ou8FkOJIrp01WbDycDVyWAaIHGgZNj+sNlqhVnVKIgRj/fzIJ18Ur4GCmyhoJ9iB4GOPh9clBVBIkC6jSNAaQJlEzzHhx81RncKjhN2HaTpt7Xev89NrdBl0j1enyKPtYM7LrZGymlbdMBHpDTxbNe2CHkw+R+sgnBxtg1UttjMP36zuAQzNhqd5hT3fIuLyI3XWsNEL6/QL/oGN7IvBtm2a7cYsZvCiMDL3pgpKkirUOZGNgWjEGv+OipRavgal+As7J2WAGj0F2X4tVTBAzaf/hG8aQV3OXacMBrQJVUldpqsqpfnQB1gUxEOpk3/rcHMZUxG6uQbBFCrgfdFVUs6N/IDe6humkqiFpouXc+h5hhPcwvguOWJcdgHmlluEO/SnWaP41hDIwDw4zNv/EavG0ZI1645QXuSrLDOv1mgX4XEBvxprILzPhYhz3Za+Lw4v4UVIari3kE/ZQf5OYqhECj3Fou5/Rl65IOm0vOpp7JfVmJHni+EPVJbBRv4nQQ+GHl8CEFT1v+SejgUXfB3hMxOXYeEHPGbzCbgFqOnmLBPrxk/pPIwd4SLzGQf9GALkbJNASQQPjej3IBxhVHEhr+w9t8ffz0FtiLd28OoEa7IZayjmuLk2Q9WvM=
+        on:
+          tags: true
