@@ -45,7 +45,7 @@ script:
 #  - pytest tests/unit/test_prob.py
 #  - pytest tests/unit/test_utils.py
 #  - pytest tests/unit/test_svm_repurposer.py
-  - pytest tests/unit/test_model_handler.py
+  - pytest tests/unit/test_model_handler.py -v
   - pytest tests/unit/
   - pytest --integration
   - pytest #--durations=0 --cov=./ --integration
