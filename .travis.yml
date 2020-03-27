@@ -38,15 +38,7 @@ install:
 script:
   - flake8
   - ls
-#  - pytest tests/unit/test_lr_repurposer.py
-#  - pytest tests/unit/test_gp_repurposer.py
-#  - pytest tests/unit/test_bnn_repurposer.py
-#  - pytest tests/unit/test_meta_model_repurposer.py
-#  - pytest tests/unit/test_prob.py
-#  - pytest tests/unit/test_utils.py
-#  - pytest tests/unit/test_svm_repurposer.py
-  - pytest tests/unit/test_model_handler.py -v
-  - pytest tests/unit/
+  - pytest tests/unit/test_svm_repurposer.py -v
   - pytest --integration
   - pytest #--durations=0 --cov=./ --integration
 #after_success:
