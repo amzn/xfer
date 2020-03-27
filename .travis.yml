@@ -31,15 +31,15 @@ before_install: |
   fi
 install:
   - pip3 install -r requirements.txt
-  - pip install -r test_requirements.txt
+  - pip3 install -r test_requirements.txt
   # work around issues with GPy setting matplotlib backend
   - "echo 'backend: Agg' > matplotlibrc"
   - pip freeze
 script:
   - flake8
   - ls
-  - pytest tests/unit/test_lr_repurposer.py
-  - - pytest tests/unit/test_gp_repurposer.py
+  - python3 pytest tests/unit/test_lr_repurposer.py
+  - python3 pytest tests/unit/test_gp_repurposer.py
 #  - pytest #--durations=0 --cov=./ --integration
 #after_success:
 #  - codecov
