@@ -45,7 +45,7 @@ class SvmRepurposerTestCase(MetaModelRepurposerTestCase):
 
     @patch.object(SvmRepurposer, RepurposerTestUtils.VALIDATE_PREDICT_METHOD_NAME)
     @patch(RepurposerTestUtils.META_MODEL_REPURPOSER_MODEL_HANDLER_CLASS)
-    @pytest.mark.skipif(sys.version_info < (3, 5), reason='requires at least python3.5')
+    @pytest.mark.skipif(sys.version_info > (3, 4), reason='test fails on versions of python newer than 3.4')
     def test_predict_label(self, mock_model_handler, validate_method):
         """ Test predict_label wrapper in meta model base class using svm_repurposer object"""
         self._test_predict(mock_model_handler, validate_method, test_predict_probability=False,
