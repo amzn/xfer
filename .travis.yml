@@ -30,17 +30,19 @@ before_install: |
     fi
   fi
 install:
-  - pip3 install -r requirements.txt
-  - pip3 install -r test_requirements.txt
+  - pip install -r requirements.txt
+  - pip install -r test_requirements.txt
   # work around issues with GPy setting matplotlib backend
   - "echo 'backend: Agg' > matplotlibrc"
   - pip freeze
 script:
   - flake8
   - ls
-  - python3 -m pytest tests/unit/test_lr_repurposer.py
-  - python3 -m pytest tests/unit/test_gp_repurposer.py
-#  - pytest #--durations=0 --cov=./ --integration
+  - pytest tests/unit/test_lr_repurposer.py
+  - pytest tests/unit/test_gp_repurposer.py
+  - pytest tests/unit/
+  - pytest --integration
+  - pytest #--durations=0 --cov=./ --integration
 #after_success:
 #  - codecov
 jobs:
