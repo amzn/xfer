@@ -38,8 +38,8 @@ install:
 script:
   - flake8
   - ls
-  - python3 pytest tests/unit/test_lr_repurposer.py
-  - python3 pytest tests/unit/test_gp_repurposer.py
+  - python3 -m pytest tests/unit/test_lr_repurposer.py
+  - python3 -m pytest tests/unit/test_gp_repurposer.py
 #  - pytest #--durations=0 --cov=./ --integration
 #after_success:
 #  - codecov
