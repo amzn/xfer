@@ -12,8 +12,8 @@ In more detail:
 - [leap](leap): MXNet implementation of  "leap", the meta-gradient path learner published in ICLR 2019: [(link)](https://arxiv.org/abs/1812.01054) by S. Flennerhag, P. G. Moreno, N. Lawrence, A. Damianou.   
 - [nn_similarity_index](nn_similarity_index): PyTorch code for comparing trained neural networks using both feature and gradient information.   
 - [finite_ntk](finite_ntk): PyTorch implementation of finite width neural tangent kernels from the paper *On Transfer Learning with Linearised Neural Networks* [(link)](http://metalearning.ml/2019/papers/metalearn2019-maddox.pdf), by W. Maddox, S. Tang, P. G. Moreno, A. G. Wilson, and A. Damianou which appeared at the 3rd MetaLearning Workshop at NeurIPS, 2019.    
-- [synthetic_info_bottleneck](synthetic_info_bottleneck) PyTorch implementation of the *synthetic information bottleneck* algorithm for few-shot classification on Mini-ImageNet, which is used in the ICLR 2020 paper 
-[Empirical Bayes Transductive Meta-Learning with Synthetic Gradients](https://openreview.net/forum?id=Hkg-xgrYvH).   
+- [synthetic_info_bottleneck](synthetic_info_bottleneck) PyTorch implementation of the *synthetic information bottleneck* algorithm for few-shot classification on Mini-ImageNet, which is used in the ICLR 2020 paper *Empirical Bayes Transductive Meta-Learning with Synthetic Gradients*  [(link)](https://openreview.net/forum?id=Hkg-xgrYvH).   
+ 
 
 Navigate to the corresponding folder for more details.
 
