@@ -11,8 +11,10 @@
 #   express or implied. See the License for the specific language governing
 #   permissions and limitations under the License.
 # ==============================================================================
+import sys
 from unittest.mock import patch
 
+import pytest
 from sklearn.svm import SVC
 import numpy as np
 
@@ -43,6 +45,7 @@ class SvmRepurposerTestCase(MetaModelRepurposerTestCase):
 
     @patch.object(SvmRepurposer, RepurposerTestUtils.VALIDATE_PREDICT_METHOD_NAME)
     @patch(RepurposerTestUtils.META_MODEL_REPURPOSER_MODEL_HANDLER_CLASS)
+    @pytest.mark.skipif(sys.version_info < (3, 5), reason='requires at least python3.5')
     def test_predict_label(self, mock_model_handler, validate_method):
         """ Test predict_label wrapper in meta model base class using svm_repurposer object"""
         self._test_predict(mock_model_handler, validate_method, test_predict_probability=False,
