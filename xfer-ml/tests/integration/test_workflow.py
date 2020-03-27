@@ -130,7 +130,7 @@ class SvmWorkflowTestCase(WorkflowTestCase):
 
     @pytest.mark.skipif(sys.version_info > (3, 4), reason='test fails on versions of python newer than 3.4 due to '
                                                           'pickle not working with newer version of scikit-learn')
-    def test_workflow(self):
+    def test_load_pre_saved_repurposer(self):
         pass
 
 
