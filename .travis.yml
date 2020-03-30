@@ -37,7 +37,6 @@ install:
   - pip freeze
 script:
   - flake8
-  - ls
   - pytest --durations=0 --cov=./ --integration
 after_success:
   - codecov

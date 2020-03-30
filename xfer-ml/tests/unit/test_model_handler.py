@@ -471,8 +471,9 @@ class TestModelHandler(TestCase):
         assert cm.output == ['WARNING:root:Could not find layer parameters: conv1_foo',
                              'WARNING:root:Could not find layer parameters: conv2_foo']
 
-    @pytest.mark.skip
-    # Skipping this test because it causes TravisCI to crash
+    @pytest.mark.skip(reason='This test causes an MXNet error to be raised because the weights provided to the model '
+                             'do not match the shape of the model. On TravisCI machines, this raised error causes the '
+                             'build to crash.')
     def test_get_module_set_params_error(self):
         # Assert ModelArchitectureError is raised when iterator dimensions do not match module weights
         image_iter = mx.image.ImageIter(2, (3, 123, 123), imglist=self.imglist, path_root='test_images',
