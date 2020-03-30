@@ -6,6 +6,7 @@ python:
 sudo: required
 dist: xenial
 before_install: |
+  cd xfer-ml
   if [[ $TRAVIS_OS_NAME == 'osx' ]]; then
     # Get latest version of brew
     brew update
@@ -43,15 +44,6 @@ jobs:
   include:
     - os: osx
       language: generic
-      python: '3.4'
-      # Full version number required
-      env: PYTHON=3.4.4
-    - os: osx
-      language: generic
-      python: '3.5'
-      env: PYTHON=3.5.1
-    - os: osx
-      language: generic
       python: '3.6'
       env: PYTHON=3.6.6
     - os: linux
@@ -84,5 +76,4 @@ jobs:
         password:
           secure:  dTE1XktLfnIWaQ1jnwNX0jtFf9qlkS2KekXQwqRB5x6zO3ou8FkOJIrp01WbDycDVyWAaIHGgZNj+sNlqhVnVKIgRj/fzIJ18Ur4GCmyhoJ9iB4GOPh9clBVBIkC6jSNAaQJlEzzHhx81RncKjhN2HaTpt7Xev89NrdBl0j1enyKPtYM7LrZGymlbdMBHpDTxbNe2CHkw+R+sgnBxtg1UttjMP36zuAQzNhqd5hT3fIuLyI3XWsNEL6/QL/oGN7IvBtm2a7cYsZvCiMDL3pgpKkirUOZGNgWjEGv+OipRavgal+As7J2WAGj0F2X4tVTBAzaf/hG8aQV3OXacMBrQJVUldpqsqpfnQB1gUxEOpk3/rcHMZUxG6uQbBFCrgfdFVUs6N/IDe6humkqiFpouXc+h5hhPcwvguOWJcdgHmlluEO/SnWaP41hDIwDw4zNv/EavG0ZI1645QXuSrLDOv1mgX4XEBvxprILzPhYhz3Za+Lw4v4UVIari3kE/ZQf5OYqhECj3Fou5/Rl65IOm0vOpp7JfVmJHni+EPVJbBRv4nQQ+GHl8CEFT1v+SejgUXfB3hMxOXYeEHPGbzCbgFqOnmLBPrxk/pPIwd4SLzGQf9GALkbJNASQQPjej3IBxhVHEhr+w9t8ffz0FtiLd28OoEa7IZayjmuLk2Q9WvM=
         on:
-          branch: master
-
+          tags: true
