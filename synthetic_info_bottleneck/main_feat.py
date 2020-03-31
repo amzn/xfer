@@ -327,7 +327,6 @@ args.nQuery = len(episodeInfo[0]['Query'][0])
 #############################################################################################
 ## model
 
-#milestones=[50, 80, 100]
 milestones = [100] if args.dataset == 'CUB' else [50] # More epochs for CUB since less iterations / epoch
 
 baseModel = BaseTrainer(trainLoader, valLoader, nbCls,
@@ -390,4 +389,3 @@ os.system(msg)
 msg = 'mv {} {}'.format(args.outDir, '{}_{:.3f}'.format(args.outDir, valTop1))
 print (msg)
 os.system(msg)
-
