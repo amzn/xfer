@@ -1,0 +1,26 @@
+# Few-shot dataset
+nClsEpisode: 5 # number of categories in each episode
+nSupport: 1 # number of samples per category in the support set
+nQuery: 15 # number of samples per category in the query set
+dataset: 'Cifar' # choices = ['miniImageNet', 'Cifar']
+
+# Network
+nStep: 3 # number of synthetic gradient steps
+architecture: 'WRN_28_10'  # choices = ['WRN_28_10', 'Conv64_4']
+batchSize: 1 # number of episodes in each batch
+
+# Optimizer
+lr: 0.001 # lr is fixed
+weightDecay: 0.0005 
+momentum: 0.9 
+
+# Training details
+expName: cifar-fs
+nbIter: 50000 # number of training iterations
+seed: 100 # can be reset with --seed
+gpu: '1' # can be reset with --gpu
+resumeFeatPth : './ckpts/CIFAR-FS/netFeatBest62.561.pth' # feat ckpt
+coeffGrad: 0 # grad loss coeff
+
+# Testing
+nEpisode: 2000 # number of episodes for testing
