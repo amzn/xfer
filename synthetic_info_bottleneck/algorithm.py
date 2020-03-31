@@ -135,7 +135,6 @@ class Algorithm:
         top1 = AverageMeter()
 
         self.netFeat.eval()
-        #self.netSIB.eval() # set train mode, since updating bn helps to estimate better gradient
 
         if lr is None:
             lr = self.optimizer.param_groups[0]['lr']
