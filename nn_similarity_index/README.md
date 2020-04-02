@@ -1,9 +1,26 @@
 ## Similarity of Neural Networks with Gradients 
 --------------------------------------------------------------------------------
 
+This folder contains code for comparing trained neural networks using both feature and gradient information, as detailed in the paper [(link)](https://arxiv.org/abs/2003.11498):
+
+*Similarity of Neural Networks with Gradients*
+
+by S. Tang, W. Maddox, C. Dickens, T. Diethe and A. Damianou.
+
+Please cite our work if you find it useful: 
+
+```
+@article{tang2020similarity,
+  title={Similarity of Neural Networks with Gradients},
+  author={Tang, Shuai and Maddox, Wesley J and Dickens, Charlie and Diethe, Tom and Damianou, Andreas},
+  journal={arXiv preprint arXiv:2003.11498},
+  year={2020}
+}
+```
+
 ## Introduction  
 
-This folder contains code for comparing trained neural networks using both feature and gradient information. The implementation relies on the following three files:
+The implementation relies on the following three files:
 
 *sketched_kernels.py* computes the sketched kernel matrices of individual residual blocks based on a pretrained ImageNet model and a given dataset.
 
