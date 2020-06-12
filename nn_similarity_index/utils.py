@@ -25,8 +25,8 @@ from enum import Enum
 class DatasetsNames(Enum):
     cifar10  = lambda x: {"train" : True if x == "train" else False}
     cifar100 = lambda x: {"train" : True if x == "train" else False}
-    svhn     = lambda x: x
-    stl10    = lambda x: x
+    svhn     = lambda x: {"split" : x}
+    stl10    = lambda x: {"split" : x}
 
 
 def load_model(device, modelname, pretrained=True):
