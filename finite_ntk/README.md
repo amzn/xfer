@@ -1,24 +1,25 @@
 # Transfer Learning via Linearized Neural Networks
 
-This repository contains a GPyTorch implementation of finite width neural tangent kernels from the paper [(link)](http://metalearning.ml/2019/papers/metalearn2019-maddox.pdf) 
+This repository contains a GPyTorch implementation of finite width neural tangent kernels from the paper [(link)](https://arxiv.org/abs/2103.01439) 
 
-*On Transfer Learning with Linearised Neural Networks*
+*Fast Adaptation with Linearized Neural Networks*
 
 by Wesley Maddox, Shuai Tang, Pablo Garcia Moreno, Andrew Gordon Wilson, and Andreas Damianou,
 
-which appeared at the 3rd MetaLearning Workshop at NeurIPS, 2019.
+which appeared at AISTATS 2021. Please note that this is a revised and expanded version of the workshop paper [On Transfer Learning with Linearised Neural Networks](http://metalearning.ml/2019/papers/metalearn2019-maddox.pdf), which appeared at the 3rd MetaLearning Workshop at NeurIPS, 2019.
 
 ## Introduction
 
 
 Please cite our work if you find it useful:
 ```
-@article{maddox_linearised_2019,
-  title={On Transfer Learning with Linearised Neural Networks},
-  author={Maddox, Wesley and Tang, Shuai, and Garcia Moreno, Pablo, and Wilson, Andrew Gordon, and Damianou, Andreas},
-  journal={3rd Metalearning Workshop at NeurIPS},
-  url={http://metalearning.ml/2019/papers/metalearn2019-maddox.pdf}
-  year={2019}
+@inproceedings{maddox2021fast,
+  title={Fast Adaptation with Linearized Neural Networks},
+  author={Maddox, Wesley and Tang, Shuai and Moreno, Pablo and Wilson, Andrew Gordon and Damianou, Andreas},
+  booktitle={International Conference on Artificial Intelligence and Statistics},
+  pages={2737--2745},
+  year={2021},
+  organization={PMLR}
 }
 ```
 
