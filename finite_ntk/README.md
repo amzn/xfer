@@ -1,8 +1,6 @@
 # Transfer Learning via Linearized Neural Networks
 
-This repository contains a GPyTorch implementation of finite width neural tangent kernels from the paper [(link)](https://arxiv.org/abs/2103.01439) 
-
-*Fast Adaptation with Linearized Neural Networks*
+This repository contains a GPyTorch implementation of finite width neural tangent kernels from the paper [Fast Adaptation with Linearized Neural Networks](https://arxiv.org/abs/2103.01439) 
 
 by Wesley Maddox, Shuai Tang, Pablo Garcia Moreno, Andrew Gordon Wilson, and Andreas Damianou,
 
