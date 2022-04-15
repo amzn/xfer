@@ -52,7 +52,7 @@ def generate_data(
     
     df = pd.read_hdf(hdf_loc, "full")
 
-    is_train_year = torch.from_numpy((df["year"] == test_year).values)
+    is_train_year = torch.from_numpy((df["year"] == train_year).values)
     is_ng = torch.from_numpy(df["is_ng"].values).bool()
     is_test = torch.from_numpy((df["year"] == test_year).values)
 
