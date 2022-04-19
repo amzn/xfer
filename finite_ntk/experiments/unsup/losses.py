@@ -42,9 +42,6 @@ def map_crossentropy(
     if bias and current_pars is None:
         Warning("Nothing will be returned because current_pars is none")
 
-    #model_pars = flatten(model.parameters())
-    #rand_proj = torch.randn(512, 10).cuda() 
-
     def criterion(current_pars, input_data, target, return_predictions=True):
         r"""
         Loss function for MAP
@@ -56,55 +53,22 @@ def map_crossentropy(
         """
         rhs = current_pars[0] - flatten(model.parameters()).view(-1,1)
 
-        #def functional_model(*params):
-        #    unflattened_params = unflatten_like(params[0], model.parameters())
-        #    for param, new_param in zip(model.parameters(), unflattened_params):
-        #        param.data.mul_(0.).add_(new_param)
-        #    return model(input_data)
-
-        #features = torch.autograd.functional.jvp(functional_model, 
-        #    flatten(model.parameters()), v=flatten(model.parameters()).detach())
         with torch.enable_grad():
             features = Rop(model(input_data), model.parameters(), unflatten_like(rhs, model.parameters()))[0]
 
         if bias:
             features = wd * features + model(input_data)
 
-        #if rand_proj is None:
-        #    nc = target.max() + 1
-        #    if nc > 10:
-        #        nc = 100
-        #    else:
-        #        nc = 10
-        #
-        #    rand_proj = torch.randn(features.shape[-1], nc)
-        #    print('i just created a new random projection!!!')
-
         predictions = features @ current_pars[1]
-
-        #rhs = current_pars[0]
-        #if bias:
-        #    rhs = current_pars[0] - model_pars.view(-1, 1)
-
-        # compute J^T \theta
-        #predictions = Jacobian(model=model, data=input_data, num_outputs=1)._t_matmul(rhs)
-        #print('shape of the predictions', predictions.shape)
-        #predictions_reshaped = predictions.reshape(target.shape[0], num_classes)
-
-        #if bias:
-        #    #print('adding into the bias term??')
-        #    predictions_reshaped = predictions_reshaped + model(input_data)
 
         loss = (
             torch.nn.functional.cross_entropy(predictions, target)
             * target.shape[0]
         )
-        #regularizer = current_pars[0].norm() * wd
         
         if eval_mode:
             output = loss
         else:
-            #output = num_data * loss + regularizer
             output = loss
 
         return output, predictions 

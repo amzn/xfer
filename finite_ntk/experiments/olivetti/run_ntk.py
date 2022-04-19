@@ -1,3 +1,17 @@
+# Copyright 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+#
+#   Licensed under the Apache License, Version 2.0 (the "License").
+#   You may not use this file except in compliance with the License.
+#   A copy of the License is located at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#   or in the "license" file accompanying this file. This file is distributed
+#   on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+#   express or implied. See the License for the specific language governing
+#   permissions and limitations under the License.
+# ==============================================================================
+
 import numpy as np
 import torch
 import copy
@@ -9,9 +23,6 @@ import gpytorch
 import pickle
 
 import finite_ntk
-
-sys.path.append('../cifar')
-from utils import train_epoch
 
 class Reshape(nn.Module):
     def __init__(self, *args):
@@ -75,7 +86,6 @@ def main(args):
 
     test_images = dataset['test_images']
     test_targets = dataset['test_angles']
-    #test_ids = dataset['test_people_ids']
 
     train_images = torch.from_numpy(train_images).float()
     train_targets = torch.from_numpy(train_targets).float()
@@ -102,15 +112,14 @@ def main(args):
 
     ##### set up data loaders
     # we have to reshape the inputs so that gpytorch internals can stack
-    trainloader = torch.utils.data.DataLoader(
-                    torch.utils.data.TensorDataset(train_images.reshape(train_images.shape[0], -1),
-                        train_targets), batch_size=32, 
-                    shuffle=True)
-
     adaptloader = torch.utils.data.DataLoader(
-    torch.utils.data.TensorDataset(adapt_images.reshape(adapt_images.shape[0], -1),
-                                    adapt_targets), batch_size=32, 
-                                         shuffle=False)
+        torch.utils.data.TensorDataset(
+            adapt_images.reshape(adapt_images.shape[0], -1),
+            adapt_targets,
+        ),
+        batch_size=32, 
+        shuffle=False,
+    )
 
     ###### make the network and set up optimizer
     net = make_network()
@@ -122,7 +131,6 @@ def main(args):
 
     ###### now train the network
     for i in range(args.epochs):
-        #train_epoch(trainloader, net, gaussian_loglikelihood, optimizer)
         for input, target in adaptloader:
             input, target = input.cuda(), target.cuda()
         
@@ -175,9 +183,7 @@ def main(args):
             print(n)
 
     #### train the last layer
-    f_optimizer = torch.optim.Adam(frozen_net.parameters(), lr = 1e-3, amsgrad=True)
     for i in range(args.adapt_epochs):
-        #train_epoch(adaptloader, frozen_net, gaussian_loglikelihood, f_optimizer)
         for input, target in adaptloader:
             input, target = input.cuda(), target.cuda()
         
@@ -202,7 +208,6 @@ def main(args):
 
     ##### and finally we "fine-tune" the whole net
     for i in range(args.adapt_epochs):
-        #train_epoch(trainloader, net, gaussian_loglikelihood, optimizer)
         for input, target in adaptloader:
             input, target = input.cuda(), target.cuda()
         
