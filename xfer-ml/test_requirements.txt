@@ -1,4 +1,4 @@
-codecov==2.0.15
+codecov==2.0.16
 flake8==3.5.0
 pytest==3.2.1
 pytest-cov==2.5.1
