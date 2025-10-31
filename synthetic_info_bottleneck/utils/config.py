@@ -59,7 +59,7 @@ def get_config_from_yaml(yaml_file):
     :return: EasyDict config
     """
     with open(yaml_file) as fp:
-        config_dict = yaml.load(fp)
+        config_dict = yaml.safe_load(fp)
 
     # convert the dictionary to a namespace using bunch lib
     config = EasyDict(config_dict)
